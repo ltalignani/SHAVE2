@@ -1,0 +1,146 @@
+Using GATK jar /Users/loictalignani/snakemake-models/short-read-alignment-vector-pipeline/.snakemake/conda/46cd29f33dc91d09f4c6822f7f67339c/share/gatk4-4.2.6.1-1/gatk-package-4.2.6.1-local.jar
+Running:
+    java -Dsamjdk.use_async_io_read_samtools=false -Dsamjdk.use_async_io_write_samtools=true -Dsamjdk.use_async_io_write_tribble=false -Dsamjdk.compression_level=2 -Xmx16000M -jar /Users/loictalignani/snakemake-models/short-read-alignment-vector-pipeline/.snakemake/conda/46cd29f33dc91d09f4c6822f7f67339c/share/gatk4-4.2.6.1-1/gatk-package-4.2.6.1-local.jar HaplotypeCaller --native-pair-hmm-threads 8 --input results/04_Variants/ERR3343471_bwa_10X_indel-qual.bam --reference resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta --tmp-dir /var/folders/d3/l5snwfsj7yb7zrln2fvzwpqr0000gn/T/tmpjse3mvw1 --emit-ref-confidence GVCF --output results/04_Variants/haplotypecaller/ERR3343471_bwa_10X_variant-call.g.vcf
+16:56:46.195 INFO  NativeLibraryLoader - Loading libgkl_compression.dylib from jar:file:/Users/loictalignani/snakemake-models/short-read-alignment-vector-pipeline/.snakemake/conda/46cd29f33dc91d09f4c6822f7f67339c/share/gatk4-4.2.6.1-1/gatk-package-4.2.6.1-local.jar!/com/intel/gkl/native/libgkl_compression.dylib
+16:56:46.690 INFO  HaplotypeCaller - ------------------------------------------------------------
+16:56:46.690 INFO  HaplotypeCaller - The Genome Analysis Toolkit (GATK) v4.2.6.1
+16:56:46.690 INFO  HaplotypeCaller - For support and documentation go to https://software.broadinstitute.org/gatk/
+16:56:46.690 INFO  HaplotypeCaller - Executing as loictalignani@MBP-Loic.local on Mac OS X v12.4 x86_64
+16:56:46.691 INFO  HaplotypeCaller - Java runtime: OpenJDK 64-Bit Server VM v11.0.15+10-LTS
+16:56:46.691 INFO  HaplotypeCaller - Start Date/Time: 14 octobre 2022 à 16:56:46 CEST
+16:56:46.691 INFO  HaplotypeCaller - ------------------------------------------------------------
+16:56:46.691 INFO  HaplotypeCaller - ------------------------------------------------------------
+16:56:46.693 INFO  HaplotypeCaller - HTSJDK Version: 2.24.1
+16:56:46.693 INFO  HaplotypeCaller - Picard Version: 2.27.1
+16:56:46.694 INFO  HaplotypeCaller - Built for Spark Version: 2.4.5
+16:56:46.694 INFO  HaplotypeCaller - HTSJDK Defaults.COMPRESSION_LEVEL : 2
+16:56:46.694 INFO  HaplotypeCaller - HTSJDK Defaults.USE_ASYNC_IO_READ_FOR_SAMTOOLS : false
+16:56:46.694 INFO  HaplotypeCaller - HTSJDK Defaults.USE_ASYNC_IO_WRITE_FOR_SAMTOOLS : true
+16:56:46.694 INFO  HaplotypeCaller - HTSJDK Defaults.USE_ASYNC_IO_WRITE_FOR_TRIBBLE : false
+16:56:46.694 INFO  HaplotypeCaller - Deflater: IntelDeflater
+16:56:46.694 INFO  HaplotypeCaller - Inflater: IntelInflater
+16:56:46.694 INFO  HaplotypeCaller - GCS max retries/reopens: 20
+16:56:46.694 INFO  HaplotypeCaller - Requester pays: disabled
+16:56:46.694 INFO  HaplotypeCaller - Initializing engine
+16:56:46.983 INFO  HaplotypeCaller - Done initializing engine
+16:56:46.987 INFO  HaplotypeCallerEngine - Tool is in reference confidence mode and the annotation, the following changes will be made to any specified annotations: 'StrandBiasBySample' will be enabled. 'ChromosomeCounts', 'FisherStrand', 'StrandOddsRatio' and 'QualByDepth' annotations have been disabled
+16:56:47.015 INFO  HaplotypeCallerEngine - Standard Emitting and Calling confidence set to 0.0 for reference-model confidence output
+16:56:47.015 INFO  HaplotypeCallerEngine - All sites annotated with PLs forced to true for reference-model confidence output
+16:56:47.038 INFO  NativeLibraryLoader - Loading libgkl_utils.dylib from jar:file:/Users/loictalignani/snakemake-models/short-read-alignment-vector-pipeline/.snakemake/conda/46cd29f33dc91d09f4c6822f7f67339c/share/gatk4-4.2.6.1-1/gatk-package-4.2.6.1-local.jar!/com/intel/gkl/native/libgkl_utils.dylib
+16:56:47.201 INFO  PairHMM - OpenMP multi-threaded AVX-accelerated native PairHMM implementation is not supported
+16:56:47.202 WARN  PairHMM - ***WARNING: Machine does not have the AVX instruction set support needed for the accelerated AVX PairHmm. Falling back to the MUCH slower LOGLESS_CACHING implementation!
+16:56:47.314 INFO  ProgressMeter - Starting traversal
+16:56:47.317 INFO  ProgressMeter -        Current Locus  Elapsed Minutes     Regions Processed   Regions/Minute
+16:56:51.052 WARN  DepthPerSampleHC - Annotation will not be calculated at position JAFDOQ010000574.1:253042 and possibly subsequent; genotype for sample ERR3343471 is not called
+16:56:51.053 WARN  StrandBiasBySample - Annotation will not be calculated at position JAFDOQ010000574.1:253042 and possibly subsequent; genotype for sample ERR3343471 is not called
+16:56:51.055 WARN  InbreedingCoeff - InbreedingCoeff will not be calculated at position JAFDOQ010000574.1:253042 and possibly subsequent; at least 10 samples must have called genotypes
+16:56:57.320 INFO  ProgressMeter - JAFDOQ010000565.1:6182026              0.2                 21810         130860.0
+16:57:07.319 INFO  ProgressMeter - JAFDOQ010000469.1:68701              0.3                 90770         272310.0
+16:57:21.029 INFO  ProgressMeter - JAFDOQ010000460.1:3231114              0.6                141600         252032.0
+16:57:34.418 INFO  ProgressMeter - JAFDOQ010000449.1:2876297              0.8                207760         264662.4
+16:58:46.868 INFO  ProgressMeter - JAFDOQ010000446.1:258178              2.0                223010         111924.7
+16:59:31.133 INFO  ProgressMeter - JAFDOQ010000445.1:9162414              2.7                254330          93152.6
+16:59:41.133 INFO  ProgressMeter - JAFDOQ010000437.1:6862334              2.9                312400         107838.8
+17:00:29.582 INFO  ProgressMeter - JAFDOQ010000437.1:7876351              3.7                315790          85247.7
+17:00:39.583 INFO  ProgressMeter - JAFDOQ010000429.1:2401              3.9                386880          99941.0
+17:00:49.583 INFO  ProgressMeter - JAFDOQ010000427.1:2620985              4.0                435720         107911.6
+17:00:59.584 INFO  ProgressMeter - JAFDOQ010000417.1:519427              4.2                493130         117288.6
+17:01:09.583 INFO  ProgressMeter - JAFDOQ010000550.1:5147339              4.4                564190         129073.3
+17:01:19.583 INFO  ProgressMeter - JAFDOQ010000547.1:1696412              4.5                619000         136411.2
+17:01:33.651 INFO  ProgressMeter - JAFDOQ010000534.1:2634753              4.8                685930         143734.0
+17:01:45.011 INFO  ProgressMeter - JAFDOQ010000529.1:873660              5.0                725800         146284.9
+17:01:55.012 INFO  ProgressMeter - JAFDOQ010000525.1:2525454              5.1                747060         145676.4
+17:02:32.291 INFO  ProgressMeter - JAFDOQ010000525.1:11620670              5.7                777410         135212.3
+17:02:42.291 INFO  ProgressMeter - JAFDOQ010000508.1:729676              5.9                851950         144002.5
+17:02:52.292 INFO  ProgressMeter - JAFDOQ010000568.1:8279925              6.1                914940         150412.2
+17:03:18.621 INFO  ProgressMeter - JAFDOQ010000568.1:9424119              6.5                918760         140877.0
+17:03:47.085 INFO  ProgressMeter - JAFDOQ010000568.1:10353593              7.0                921860         131767.4
+17:03:57.085 INFO  ProgressMeter - JAFDOQ010000499.1:1174301              7.2                994760         138879.0
+17:04:07.085 INFO  ProgressMeter - JAFDOQ010000490.1:16349245              7.3               1065780         145410.6
+17:04:17.092 INFO  ProgressMeter - JAFDOQ010000486.1:3197869              7.5               1131000         150876.1
+17:04:38.869 INFO  ProgressMeter - JAFDOQ010000486.1:10411962              7.9               1155070         146970.7
+17:04:48.869 INFO  ProgressMeter - JAFDOQ010000485.1:6800640              8.0               1206260         150296.9
+17:04:58.869 INFO  ProgressMeter - JAFDOQ010000104.1:2274493              8.2               1275580         155700.6
+17:05:09.224 INFO  ProgressMeter - JAFDOQ010000100.1:6778830              8.4               1333480         159409.9
+17:05:19.224 INFO  ProgressMeter - JAFDOQ010000084.1:1582411              8.5               1403410         164492.3
+17:05:29.225 INFO  ProgressMeter - JAFDOQ010000074.1:993146              8.7               1483480         170545.3
+17:05:39.226 INFO  ProgressMeter - JAFDOQ010000067.1:1245693              8.9               1499710         169169.5
+17:06:02.873 INFO  ProgressMeter - JAFDOQ010000067.1:8017620              9.3               1522310         164409.6
+17:06:13.270 INFO  ProgressMeter - JAFDOQ010000067.1:8672322              9.4               1524500         161621.5
+17:06:23.271 INFO  ProgressMeter - JAFDOQ010000067.1:22676485              9.6               1571250         163685.5
+17:06:33.270 INFO  ProgressMeter - JAFDOQ010000192.1:197495              9.8               1609680         164827.2
+17:06:45.332 INFO  ProgressMeter - JAFDOQ010000052.1:5072089             10.0               1688930         169453.9
+17:06:56.451 INFO  ProgressMeter - JAFDOQ010000052.1:21182883             10.2               1742690         171656.1
+17:07:06.544 INFO  ProgressMeter - JAFDOQ010000040.1:5163             10.3               1812200         175593.4
+17:07:16.544 INFO  ProgressMeter - JAFDOQ010000190.1:13906287             10.5               1883620         179613.0
+17:07:26.544 INFO  ProgressMeter - JAFDOQ010000190.1:35317285             10.7               1955060         183508.8
+17:07:36.545 INFO  ProgressMeter - JAFDOQ010000035.1:5134264             10.8               2015380         186256.6
+17:07:46.548 INFO  ProgressMeter - JAFDOQ010000030.1:5013249             11.0               2089580         190183.7
+17:07:56.548 INFO  ProgressMeter - JAFDOQ010000025.1:1893191             11.2               2122940         190332.8
+17:08:06.549 INFO  ProgressMeter - JAFDOQ010000021.1:8893081             11.3               2178640         192450.9
+17:08:23.866 INFO  ProgressMeter - JAFDOQ010000021.1:20312874             11.6               2216740         190947.9
+17:08:33.866 INFO  ProgressMeter - JAFDOQ010000021.1:27057170             11.8               2239260         190157.8
+17:08:45.223 INFO  ProgressMeter - JAFDOQ010000188.1:5887848             12.0               2283140         190817.2
+17:08:55.228 INFO  ProgressMeter - JAFDOQ010000011.1:12812844             12.1               2360110         194538.6
+17:09:06.453 INFO  ProgressMeter - JAFDOQ010000002.1:4980632             12.3               2430260         197278.7
+17:09:16.453 INFO  ProgressMeter - JAFDOQ010000180.1:1604846             12.5               2503200         200487.2
+17:09:26.453 INFO  ProgressMeter - JAFDOQ010000169.1:1523751             12.7               2577480         203717.1
+17:09:45.804 INFO  ProgressMeter - JAFDOQ010000165.1:74507             13.0               2604520         200737.3
+17:10:04.872 INFO  ProgressMeter - JAFDOQ010000165.1:2381319             13.3               2612220         196517.4
+17:10:14.873 INFO  ProgressMeter - JAFDOQ010000159.1:9319075             13.5               2689560         199830.1
+17:10:31.943 INFO  ProgressMeter - JAFDOQ010000153.1:434684             13.7               2718260         197781.5
+17:10:41.943 INFO  ProgressMeter - JAFDOQ010000147.1:16017616             13.9               2793560         200825.0
+17:10:51.944 INFO  ProgressMeter - JAFDOQ010000139.1:5732416             14.1               2860220         203182.5
+17:11:01.944 INFO  ProgressMeter - JAFDOQ010000125.1:6756730             14.2               2923970         205280.7
+17:11:12.371 INFO  ProgressMeter - JAFDOQ010000120.1:2952274             14.4               2997360         207896.6
+17:11:22.413 INFO  ProgressMeter - JAFDOQ010000120.1:23879413             14.6               3067200         210299.7
+17:11:32.412 INFO  ProgressMeter - JAFDOQ010000110.1:332401             14.8               3144580         213169.2
+17:11:42.412 INFO  ProgressMeter - JAFDOQ010000310.1:1551621             14.9               3212710         215354.6
+17:11:52.413 INFO  ProgressMeter - JAFDOQ010000315.1:4568552             15.1               3276550         217207.0
+17:12:02.413 INFO  ProgressMeter - JAFDOQ010000322.1:7518110             15.3               3341810         219112.3
+17:15:45.783 INFO  ProgressMeter - JAFDOQ010000325.1:3430318             19.0               3362410         177207.6
+17:15:55.784 INFO  ProgressMeter - JAFDOQ010000334.1:435301             19.1               3436710         179546.3
+17:16:05.808 INFO  ProgressMeter - JAFDOQ010000345.1:835164             19.3               3501190         181332.2
+17:16:15.807 INFO  ProgressMeter - JAFDOQ010000352.1:6595896             19.5               3565900         183103.1
+17:16:25.807 INFO  ProgressMeter - JAFDOQ010000359.1:101701             19.6               3637210         185180.0
+17:16:35.807 INFO  ProgressMeter - JAFDOQ010000369.1:373553             19.8               3715690         187583.9
+17:16:45.827 INFO  ProgressMeter - JAFDOQ010000375.1:5691651             20.0               3789700         189720.9
+17:18:09.473 INFO  ProgressMeter - JAFDOQ010000377.1:5687241             21.4               3824560         178974.9
+17:18:22.258 INFO  ProgressMeter - JAFDOQ010000377.1:15367784             21.6               3856860         178704.5
+17:19:02.483 INFO  ProgressMeter - JAFDOQ010000377.1:16190201             22.3               3859610         173444.2
+17:19:13.224 INFO  ProgressMeter - JAFDOQ010000381.1:3146             22.4               3881070         173016.7
+17:19:23.242 INFO  ProgressMeter - JAFDOQ010000385.1:2480154             22.6               3902410         172682.7
+17:19:33.243 INFO  ProgressMeter - JAFDOQ010000398.1:2063448             22.8               3978980         174781.9
+17:19:43.242 INFO  ProgressMeter - JAFDOQ010000291.1:12755142             22.9               4035140         175960.6
+17:19:53.242 INFO  ProgressMeter - JAFDOQ010000283.1:1765603             23.1               4108850         177882.0
+17:20:03.389 INFO  ProgressMeter - JAFDOQ010000279.1:440417             23.3               4161740         178862.2
+17:20:13.389 INFO  ProgressMeter - JAFDOQ010000278.1:526952             23.4               4181990         178454.3
+17:20:23.389 INFO  ProgressMeter - JAFDOQ010000266.1:6201275             23.6               4257100         180376.5
+17:20:33.389 INFO  ProgressMeter - JAFDOQ010000262.1:10406270             23.8               4329790         182170.0
+17:20:43.389 INFO  ProgressMeter - JAFDOQ010000253.1:6550452             23.9               4396820         183702.1
+17:20:53.389 INFO  ProgressMeter - JAFDOQ010000242.1:6882532             24.1               4471700         185538.6
+17:21:14.626 INFO  ProgressMeter - JAFDOQ010000304.1:5911857             24.5               4502150         184098.5
+17:21:27.546 INFO  ProgressMeter - JAFDOQ010000304.1:5914706             24.7               4502160         182491.9
+17:23:16.280 INFO  ProgressMeter - JAFDOQ010000239.1:3304965             26.5               4538870         171390.0
+17:23:26.281 INFO  ProgressMeter - JAFDOQ010000236.1:11710338             26.6               4611600         173047.2
+17:23:36.281 INFO  ProgressMeter - JAFDOQ010000234.1:1567501             26.8               4665400         173977.9
+17:23:46.282 INFO  ProgressMeter - JAFDOQ010000234.1:19887403             27.0               4726520         175168.3
+17:24:01.248 INFO  ProgressMeter - JAFDOQ010000229.1:296471             27.2               4747730         174342.7
+17:24:39.218 INFO  ProgressMeter - JAFDOQ010000221.1:34720             27.9               4791120         171940.4
+17:24:49.155 INFO  HaplotypeCaller - 172945 read(s) filtered by: MappingQualityReadFilter 
+0 read(s) filtered by: MappingQualityAvailableReadFilter 
+0 read(s) filtered by: MappedReadFilter 
+593 read(s) filtered by: NotSecondaryAlignmentReadFilter 
+0 read(s) filtered by: NotDuplicateReadFilter 
+0 read(s) filtered by: PassesVendorQualityCheckReadFilter 
+0 read(s) filtered by: NonZeroReferenceLengthAlignmentReadFilter 
+0 read(s) filtered by: GoodCigarReadFilter 
+0 read(s) filtered by: WellformedReadFilter 
+173538 total reads filtered
+17:24:49.155 INFO  ProgressMeter - JAFDOQ010000212.1:228197             28.0               4840856         172698.9
+17:24:49.156 INFO  ProgressMeter - Traversal complete. Processed 4840856 total regions in 28.0 minutes.
+17:24:49.179 INFO  PairHMM - Total compute time in PairHMM computeLogLikelihoods() : 997.097344289
+17:24:49.179 INFO  SmithWatermanAligner - Total compute time in java Smith-Waterman : 52.21 sec
+17:24:49.180 INFO  HaplotypeCaller - Shutting down engine
+[14 octobre 2022 à 17:24:49 CEST] org.broadinstitute.hellbender.tools.walkers.haplotypecaller.HaplotypeCaller done. Elapsed time: 28.05 minutes.
+Runtime.totalMemory()=1799356416
