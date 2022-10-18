@@ -3,8 +3,8 @@
 ###### Required for ARM64 Macs ####### 
 #First of all, create a new empty osx-64 specific environment :
 # conda deactivate base
-# CONDA_SUBDIR=osx-64 conda create -n shave
-# conda activate shave
+# CONDA_SUBDIR=osx-64 conda create -n shave2
+# conda activate shave2
 # conda config --env --set subdir osx-64
 
 # Create a reference.fasta dictionnary and a fasta index for gatk4. ie:
@@ -51,12 +51,12 @@ echo -e "${green}---------------------------------------------------------------
 echo -e "${green}#####${nc} ${red}ABOUT${nc} ${green}#####${nc}"
 echo -e "${green}-----------------${nc}"
 echo ""
-echo -e "${blue}Name${nc} __________________ Start_shave.sh"
+echo -e "${blue}Name${nc} __________________ Start_shave2.sh"
 echo -e "${blue}Author${nc} ________________ Loïc Talignani"
 echo -e "${blue}Affiliation${nc} ___________ UMR_MIVEGEC"
 echo -e "${blue}Aim${nc} ___________________ Bash script for ${red}SH${nc}ort-read ${red}A${nc}lignment for ${red}VE${nc}ctor pipeline"
 echo -e "${blue}Date${nc} __________________ 2022.10.05"
-echo -e "${blue}Run${nc} ___________________ bash Start_shave.sh"
+echo -e "${blue}Run${nc} ___________________ bash Start_shave2.sh"
 echo -e "${blue}Latest Modification${nc} ___ "
 
 
@@ -244,7 +244,7 @@ echo ""
 # Remove a lock on the working directory.
 snakemake \
     --directory ${workdir}/ \
-    --snakefile ${workdir}/workflow/rules/shave.smk \
+    --snakefile ${workdir}/workflow/rules/shave2.smk \
     --config os=${os} \
     --rerun-incomplete \
     --unlock
@@ -260,7 +260,7 @@ echo ""
 # List all conda environments and their location on disk.
 snakemake \
     --directory ${workdir}/ \
-    --snakefile ${workdir}/workflow/rules/shave.smk \
+    --snakefile ${workdir}/workflow/rules/shave2.smk \
     --cores ${max_threads} \
     --config os=${os} \
     --rerun-incomplete \
@@ -277,7 +277,7 @@ echo ""
 # Cleanup unused conda environments.
 snakemake \
     --directory ${workdir}/ \
-    --snakefile ${workdir}/workflow/rules/shave.smk \
+    --snakefile ${workdir}/workflow/rules/shave2.smk \
     --cores ${max_threads} \
     --config os=${os} \
     --rerun-incomplete \
@@ -296,7 +296,7 @@ echo ""
 # If mamba package manager is not available, or if you still prefer to use conda, you can enforce that with this setting (default: 'mamba').
 snakemake \
     --directory ${workdir}/ \
-    --snakefile ${workdir}/workflow/rules/shave.smk \
+    --snakefile ${workdir}/workflow/rules/shave2.smk \
     --cores ${max_threads} \
     --config os=${os} \
     --rerun-incomplete \
@@ -318,7 +318,7 @@ echo ""
 # Do not output any progress or rule information.
 snakemake \
     --directory ${workdir}/ \
-    --snakefile ${workdir}/workflow/rules/shave.smk \
+    --snakefile ${workdir}/workflow/rules/shave2.smk \
     --cores ${max_threads}\
     --config os=${os} \
     --rerun-incomplete \
@@ -343,7 +343,7 @@ echo ""
 # Print out the shell commands that will be executed.
 snakemake \
     --directory ${workdir}/ \
-    --snakefile ${workdir}/workflow/rules/shave.smk \
+    --snakefile ${workdir}/workflow/rules/shave2.smk \
     --cores ${max_threads} \
     --max-threads ${max_threads} \
     --config os=${os} \
@@ -371,7 +371,7 @@ for graph in ${graph_list} ; do
     for extention in ${extention_list} ; do
 	snakemake \
 	    --directory ${workdir}/ \
-            --snakefile ${workdir}/workflow/rules/shave.smk \
+            --snakefile ${workdir}/workflow/rules/shave2.smk \
             --${graph} | \
 	    dot -T${extention} > \
 		${workdir}/results/10_Graphs/${graph}.${extention} ;
@@ -380,7 +380,7 @@ done
 
 snakemake \
     --directory ${workdir} \
-    --snakefile ${workdir}/workflow/rules/shave.smk \
+    --snakefile ${workdir}/workflow/rules/shave2.smk \
     --summary > ${workdir}/results/11_Reports/files_summary.txt
 
 cp ${workdir}/config/config.yaml ${workdir}/results/11_Reports/config.yaml

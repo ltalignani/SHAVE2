@@ -1,10 +1,10 @@
 #######M######I#####V#####E######G######E######C######I#######R######D#########
-# Name:                 shave.smk
+# Name:                 shave2.smk
 # Author:               Loïc TALIGNANI
 # Affiliation:          IRD_UMR224_MIVEGEC
 # Aim:                  Snakefile for SHort-read Alignment for VEctor pipeline
 # Date:                 2022.10.05
-# Run:                  snakemake --snakefile shave.smk --cores X --use-conda
+# Run:                  snakemake --snakefile shave2.smk --cores X --use-conda
 # Latest modification:  2022.10.07
 # Done:                 Added HaplotypeCaller, GenotypeGVCFs, VariantFiltration
 
