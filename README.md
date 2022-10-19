@@ -263,6 +263,7 @@ To select one or both, de/comment (#) as you wish:
 ```shell
 🖥️️ Start_shave2.sh
 📚 README.md
+🍜 snakemake.yaml
 📂 visuals/
  └── 📈 newDAG.png
 📂 config/
@@ -281,9 +282,7 @@ To select one or both, de/comment (#) as you wish:
  └── 📂 reads/  
  │    ├── 🛡️ .gitkeep
  │    ├── 📦 ERR3343471_R1.fastq.gz
- │    ├── 📦 ERR3343471_R2.fastq.gz
- │
- │
+ │    └── 📦 ERR3343471_R2.fastq.gz
 📂 workflow/
  ├── 📂 envs/
  │    ├── 🍜 bcftools-1.14.yaml
