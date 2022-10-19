@@ -85,8 +85,8 @@ IUPAC = config["consensus"]["iupac"]                # Output variants in the for
 rule all:
     input:
         multiqc = "results/00_Quality_Control/multiqc/",
-        fastqc = directory("results/00_Quality_Control/fastqc/"),
-        fastqscreen = directory("results/00_Quality_Control/fastq-screen/"),
+        fastqc = "results/00_Quality_Control/fastqc/",
+        fastqscreen = "results/00_Quality_Control/fastq-screen/",
         covstats = expand("results/03_Coverage/{sample}_{aligner}_{mincov}X_coverage-stats.tsv",
                           sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),
         consensus = expand("results/06_Consensus/{sample}_{aligner}_{mincov}X_consensus.fasta",
@@ -503,6 +503,8 @@ rule validate_sam:
     #      - MODE SUMMARY
     message:
         "Picard ValidateSamFile   {wildcards.sample} sample ({wildcards.aligner})"
+    conda:
+        PICARD
     input:
         markdup = "results/02_Mapping/{sample}_{aligner}_mark-dup.bam",
         refpath = "resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta",
