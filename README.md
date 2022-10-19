@@ -21,11 +21,11 @@ SHAVE2 is a bioinformatic pipeline used for mosquitoes (*Aedes / Anopheles*) gen
 
 In brief, SHAVE2 remove adatpers, report quality reads, aligns reads to a reference genome, fix incorrect mates, mark duplicates, add indel qualities to BAM files and call variants and genotypes.
 
-**Note about Variant and Genotype Calling**
+### Note about Variant and Genotype Calling ###
 
 Indel realignment was dropped by Broad Institute about three years ago, as they found that this step was no longer useful when the variant calling was done with HaplotypeCaller or Mutect2, which implement a more sophisticated and effective form of realignment. [see here](https://gatk.broadinstitute.org/hc/en-us/articles/360038154292/comments/360010778692). SHAVE2 use HaplotypeCaller in ERC mode to call variants and obtain the genotype likelihoods. Then, GenotypeGVCFs included in SHAVE2, perform a joint genotyping on samples pre-called with HaplotypeCaller. The last major step is a fully customizable hard-filtering, using GATK VariantFiltration instead of Variant Qualtity Score Recalibration (VQSR).
 
-**Note about BQSR and VQSR :**
+### Note about BQSR and VQSR ###
 
 *Base Quality Score Recalibration* step needs as input a *known variation* VCF file, refering to the Ensembl-Variation database or dbSNP database who stores areas of genome that differ between individual genomes ("variants"). However, we do not have any prior list of known variants for our mosquito species, that's why we cannot do BQSR. 
 
@@ -261,7 +261,7 @@ To select one or both, de/comment (#) as you wish:
 
 ### Directories tree structure ###
 ```shell
-🖥️️  GeVarLi.sh
+🖥️️ Start_shave2.sh
 📚 README.md
 📂 visuals/
  └── 📈 newDAG.png
@@ -280,10 +280,10 @@ To select one or both, de/comment (#) as you wish:
  │         
  └── 📂 reads/  
  │    ├── 🛡️ .gitkeep
- │    ├── 📦 Sample-A_R1.fastq.gz
- │    ├── 📦 Sample-A_R2.fastq.gz
- │	   ├── 📦 Sample-B_R1.fastq.gz
- │    └── 📦 Sample-B_R2.fastq.gz
+ │    ├── 📦 ERR3343471_R1.fastq.gz
+ │    ├── 📦 ERR3343471_R2.fastq.gz
+ │
+ │
 📂 workflow/
  ├── 📂 envs/
  │    ├── 🍜 bcftools-1.14.yaml
@@ -293,6 +293,8 @@ To select one or both, de/comment (#) as you wish:
  │    ├── 🍜 cutadapt-3.5.yaml
  │    ├── 🍜 fastq-screen-0.14.0.yam
  │    ├── 🍜 fastqc-0.11.9.yaml
+ │    ├── 🍜 gatk-3.8.yaml
+ │    ├── 🍜 gatk-4.3.0.0.yaml
  │    ├── 🍜 gawk-5.1.0.yaml
  │    ├── 🍜 lofreq-2.1.5.yaml
  │    ├── 🍜 multiqc-1.11.yaml
