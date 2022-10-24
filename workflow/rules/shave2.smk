@@ -99,9 +99,11 @@ rule all:
                            sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),       
         index = expand("results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bai",
                            sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),        
-        stats = expand("results/05_Validation/{sample}_{aligner}_mark-dup.txt",
+        stats = expand("results/05_Validation/{sample}_{aligner}_{mincov}X_indel-qual.txt",
                            sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),
-        check = expand("results/05_Validation/validatesamfile/{sample}_{aligner}_check_mark_dup_bam.txt",
+        callable_loci = expand("results/05_Validation/callableloci/{sample}_{aligner}_{mincov}X_indel-qual_callable_status.bed",
+                           sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),
+        check = expand("results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bam",
                            sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV)
 
 ###############################################################################
@@ -291,6 +293,85 @@ rule haplotype_caller_gvcf:
         "v1.16.0/bio/gatk/haplotypecaller"
 
 ###############################################################################
+rule samtools_stats:
+    # Aim: Collects statistics from BAM files
+    # Use: samtools stats -r ref.fa input.bam
+    message:
+        "SamTools indexing marked as duplicate BAM file {wildcards.sample} sample ({wildcards.aligner})"
+    conda:
+        SAMTOOLS
+    resources:
+       cpus = CPUS
+    input:
+        bam = "results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bam",
+        refpath = "resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta"
+    output:
+        stats = "results/05_Validation/{sample}_{aligner}_{mincov}X_indel-qual.txt"
+    log:
+        "results/11_Reports/samtools/{sample}_{aligner}_{mincov}X_indel-qual.log"
+    shell:
+        "samtools stats "                                                   # Samtools stats, collects statistics from BAM files. The output can be visualized using plot-bamstats.
+        "--threads {resources.cpus} "                                       # -@: Number of additional threads to use (default: 1)
+        "-r {input.refpath} "                                               # -r: Reference sequence (required for GC-depth and mismatches-per-cycle calculation).
+        "{input.bam} "                                                      # mark-dup bam input
+        "1> {output.stats} "                                                # stats output
+        "2> {log}"                                                          # Log redirection
+
+###############################################################################
+rule callable_loci:
+    # Aim: Collects statistics on callable, uncallable, poorly mapped, and other parts of the genome.
+    # A very common question about a NGS set of reads is what areas of the genome are considered callable. This tool
+    # considers the coverage at each locus and emits either a per base state or a summary interval BED file that
+    # partitions the genomic intervals into the following callable states:
+    # REF_N: The reference base was an N, which is not considered callable the GATK
+    # PASS: The base satisfied the min. depth for calling but had less than maxDepth to avoid having EXCESSIVE_COVERAGE
+    # NO_COVERAGE: Absolutely no reads were seen at this locus, regardless of the filtering parameters
+    # LOW_COVERAGE: There were fewer than min. depth bases at the locus, after applying filters
+    # EXCESSIVE_COVERAGE: More than -maxDepth read at the locus, indicating some sort of mapping problem
+    # POOR_MAPPING_QUALITY: More than --maxFractionOfReadsWithLowMAPQ at the locus, indicating a poor mapping quality of the reads
+    # Use: gatk3 -T CallableLoci \
+    #     -T CallableLoci \
+    #     -R reference.fasta \
+    #     -I myreads.bam \
+    #     -summary table.txt \
+    #     -o callable_status.bed
+    message:
+        "GATK3 CallableLoci for {wildcards.sample} sample ({wildcards.aligner}"
+    conda:
+        GATK
+    input:
+        refpath = "resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta",
+        bam = "results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bam"
+    output:
+        call = "results/05_Validation/callableloci/{sample}_{aligner}_{mincov}X_indel-qual_callable_status.bed",
+        summary = "results/05_Validation/callableloci/{sample}_{aligner}_{mincov}X_indel-qual_summary_table.txt"
+    log :
+        "results/11_reports/callableloci/{sample}_{aligner}_{mincov}X_indel-qual_callable_status.log"
+    shell:
+        "gatk3 -T CallableLoci -R {input.refpath} -I {input.bam} -summary {output.summary} -o {output.call}" #  > {log} 2>&1
+
+###############################################################################
+rule validate_sam:
+    # Aim: Basic check for bam file validity, as interpreted by the Broad Institute.
+    # Use: picard.jar ValidateSamFile \
+    #      -I input.bam \
+    #      - MODE SUMMARY
+    message:
+        "Picard ValidateSamFile for {wildcards.sample} sample ({wildcards.aligner})"
+    input:
+        bam = "results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bam",
+        index = "results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bai",
+        refpath = "resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta",
+    output:
+        check = "results/05_Validation/validatesamfile/{sample}_{aligner}_{mincov}X_indel-qual.txt"
+    log:
+        "results/11_Reports/validatesamfiles/{sample}_{aligner}_{mincov}X_indel-qual.log"
+    shell:
+        """
+        picard ValidateSamFile -I {input.bam} -R {input.refpath} -O {output.check} --VERBOSITY ERROR > {log} 2>&1
+        """
+
+###############################################################################
 rule samtools_indel_indexing:
     # Aim: indexing indel qualities BAM file
     # Use: samtools index -@ [THREADS] -b [INDELQUAL.bam] [INDEX.bai]
@@ -469,56 +550,6 @@ rule bedtools_genome_coverage:
         "-ibam {input.markdup} "  # The input file is in BAM format, must be sorted by position
         "1> {output.genomecov} "  # BedGraph output
         "2> {log} "               # Log redirection
-
-###############################################################################
-rule samtools_stats:
-    # Aim: Collects statistics from BAM files
-    # Use: samtools stats -r ref.fa input.bam
-    message:
-        "SamTools indexing marked as duplicate BAM file {wildcards.sample} sample ({wildcards.aligner})"
-    conda:
-        SAMTOOLS
-    resources:
-       cpus = CPUS
-    input:
-        bam = "results/02_Mapping/{sample}_{aligner}_mark-dup.bam",
-        refpath = "resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta"
-    output:
-        stats = "results/05_Validation/{sample}_{aligner}_mark-dup.txt"
-    log:
-        "results/11_Reports/samtools/{sample}_{aligner}_mark-dup.log"
-    shell:
-        "samtools stats "                                                   # Samtools stats, collects statistics from BAM files. The output can be visualized using plot-bamstats.
-        "--threads {resources.cpus} "                                       # -@: Number of additional threads to use (default: 1)
-        "-r {input.refpath} "                                               # -r: Reference sequence (required for GC-depth and mismatches-per-cycle calculation).
-        "{input.bam} "                                                      # mark-dup bam input
-        "1> {output.stats} "                                                # stats output
-        "2> {log}"                                                          # Log redirection
-
-###############################################################################
-rule validate_sam:
-    # Aim: Basic check for bam file validity, as interpreted by the Broad Institute
-    # Use: picard.jar ValidateSamFile \
-    #      -I input.bam \
-    #      - MODE SUMMARY
-    message:
-        "Picard ValidateSamFile   {wildcards.sample} sample ({wildcards.aligner})"
-    conda:
-        PICARD
-    input:
-        markdup = "results/02_Mapping/{sample}_{aligner}_mark-dup.bam",
-        refpath = "resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta",
-    output:
-        check = "results/05_Validation/validatesamfile/{sample}_{aligner}_check_mark_dup_bam.txt"
-    log:
-        "results/11_Reports/validatesamfiles/{sample}_{aligner}_mark-dup.log"
-    shell:
-        "picard ValidateSamFile " # Validates a SAM/BAM/CRAM file.<p>This tool reports on the validity of a SAM/BAM/CRAM file relative to the SAM format specification
-        "-I {input.markdup} "       # Input SAM/BAM/CRAM required
-        "-R {input.refpath} "
-        "-MODE SUMMARY "            # This mode outputs a summary table listing the numbers of all 'errors' and 'warnings'
-        "--QUIET true "
-        "&> {log}"
 
 ###############################################################################
 rule samtools_index_markdup:
