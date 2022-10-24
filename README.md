@@ -1,4 +1,4 @@
-# SHAVE2: SHort-read Alignment pipeline for VEctor v.2  - with HaplotypeCaller variant calling#
+# SHAVE2: SHort-read Alignment pipeline for VEctor v.2  - with HaplotypeCaller variant calling #
 
 ![Developper](<https://badgen.net/badge/Developper/Loïc Talignani/red?scale=0.9>)
 ![Maintener](<https://badgen.net/badge/Maintener/Loïc Talignani/blue?scale=0.9>)
