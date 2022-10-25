@@ -174,6 +174,8 @@ rule hard_filter_calls:
         mem_gb= MEM_GB
     threads: 
         CPUS
+    benchmark:
+        "benchmarks/variantfiltration/{sample}_{aligner}_{mincov}X_hardfiltered.tsv"
     log:
         "results/11_Reports/variantfiltration/{sample}_{aligner}_{mincov}X_hardfiltered.log",
     wrapper:
@@ -219,6 +221,8 @@ rule genotype_gvcfs:
         java_opts="", # optional
     resources:
         mem_mb=16000
+    benchmark:
+        "benchmarks/genotypegvcfs/{sample}_{aligner}_{mincov}X_genotyped.tsv"
     wrapper:
         "v1.16.0/bio/gatk/genotypegvcfs"
 
@@ -241,6 +245,8 @@ rule haplotype_caller_gvcf:
     threads: CPUS
     resources:
         mem_mb=16000,
+    benchmark:
+        "benchmarks/haplotypecaller/{sample}_{aligner}_{mincov}X_variant-call.tsv"
     wrapper:
         "v1.16.0/bio/gatk/haplotypecaller"
 
@@ -696,7 +702,8 @@ rule bwa_mapping:
         revreads = "results/01_Trimming/sickle/{sample}_sickle-trimmed_R2.fastq.gz"
     output:
         mapped = temp("results/02_Mapping/{sample}_bwa-mapped.sam")
-    
+    benchmark:
+        "benchmarks/bwa/{sample}_bwa-mapped.tsv"
     log:
         "results/11_Reports/bwa/{sample}.log"
     shell:
@@ -733,6 +740,8 @@ rule bowtie2_mapping:
         mapped = temp("results/02_Mapping/{sample}_bowtie2-mapped.sam")
     log:
         "results/11_Reports/bowtie2/{sample}.log"
+    benchmark:
+        "benchmarks/bowtie2/{sample}_bowtie2-mapped.tsv"
     threads: 
         CPUS
     shell:
@@ -767,6 +776,8 @@ rule sickle_trim_quality:
         fwdreads = "results/01_Trimming/sickle/{sample}_sickle-trimmed_R1.fastq.gz",
         revreads = "results/01_Trimming/sickle/{sample}_sickle-trimmed_R2.fastq.gz",
         single = temp("results/01_Trimming/sickle/{sample}_sickle-trimmed_SE.fastq.gz")
+    benchmark:
+        "benchmarks/sickle/{sample}_sickle-trimmed-qual.tsv"
     log:
         "results/11_Reports/sickle-trim/{sample}.log"
     shell:
@@ -809,6 +820,8 @@ rule cutadapt_adapters_removing:
         "results/11_Reports/cutadapt/{sample}.log"
     threads: 
         CPUS
+    benchmark:
+        "benchmarks/cutadapt/{sample}_cutadapt.tsv"
     shell:
        "cutadapt "                          # Cutadapt, finds and removes unwanted sequence from your HT-seq reads
         "--cores {resources.cpus} "          # -j: Number of CPU cores to use. Use 0 to auto-detect (default: 1)
