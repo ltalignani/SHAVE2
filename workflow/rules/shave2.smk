@@ -89,8 +89,6 @@ rule all:
         fastqscreen = "results/00_Quality_Control/fastq-screen/",
         covstats = expand("results/03_Coverage/{sample}_{aligner}_{mincov}X_coverage-stats.tsv",
                           sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),
-        consensus = expand("results/06_Consensus/{sample}_{aligner}_{mincov}X_consensus.fasta",
-                           sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),
         index_archive = expand("results/04_Variants/{sample}_{aligner}_{mincov}X_variant-filt.gz.tbi",
                            sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),        
         archive = expand("results/04_Variants/{sample}_{aligner}_{mincov}X_variant-filt.vcf.gz",
@@ -105,52 +103,6 @@ rule all:
                            sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),
         check = expand("results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bam",
                            sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV)
-
-###############################################################################
-rule sed_rename_headers:
-    # Aim: rename all fasta header with sample name
-    # Use: sed 's/[OLD]/[NEW]/' [IN] > [OUT]
-    message:
-        "Sed rename header for {wildcards.sample} sample consensus fasta ({wildcards.aligner}-{wildcards.mincov})"
-    input:
-        constmp = "results/06_Consensus/{sample}_{aligner}_{mincov}X_consensus.fasta.tmp"
-    output:
-        consensus = "results/06_Consensus/{sample}_{aligner}_{mincov}X_consensus.fasta"
-    log:
-        "results/11_Reports/sed/{sample}_{aligner}_{mincov}X_fasta-header.log"
-    shell:
-        "sed " # Sed, a Stream EDitor used to perform basic text transformations on an input stream
-        "'s/^>.*$/>{wildcards.sample}_{wildcards.aligner}_{wildcards.mincov}/' "
-        "{input.constmp} "       # Input file
-        "1> {output.consensus} " # Output file
-        "2> {log}"               # Log redirection
-
-###############################################################################
-rule bcftools_consensus:
-    # Aim: create consensus
-    # Use: bcftools consensus -f [REFERENCE] [VARIANTS.vcf.gz] -o [CONSENSUS.fasta]
-    message:
-        "BcfTools consensus for {wildcards.sample} sample ({wildcards.aligner}-{wildcards.mincov})"
-    conda:
-        BCFTOOLS
-    params:
-        iupac = IUPAC
-    input:
-        maskedref = "results/04_Variants/{sample}_{aligner}_{mincov}X_masked-ref.fasta",
-        archive = "results/04_Variants/{sample}_{aligner}_{mincov}X_variant-filt.vcf.gz",
-        index = "results/04_Variants/{sample}_{aligner}_{mincov}X_variant-filt.gz.tbi"
-    output:
-        constmp = temp("results/06_Consensus/{sample}_{aligner}_{mincov}X_consensus.fasta.tmp")
-    log:
-        "results/11_Reports/bcftools/{sample}_{aligner}_{mincov}X_consensus.log"
-    shell:
-        "bcftools "                       # Bcftools, tools for variant calling and manipulating VCFs and BCFs
-        "consensus "                      # Create consensus sequence by applying VCF variants to a reference fasta file
-        "--fasta-ref {input.maskedref} "  # -f: reference sequence in fasta format
-        "{params.iupac} "                 # -I, --iupac-codes: output variants in the form of IUPAC ambiguity codes
-        "{input.archive} "                # SNVs and Indels filtered VCF archive file
-        "--output {output.constmp} "      # -o: write output to a file (default: standard output)
-        "2> {log}"                        # Log redirection
 
 ###############################################################################
 rule tabix_tabarch_indexing:

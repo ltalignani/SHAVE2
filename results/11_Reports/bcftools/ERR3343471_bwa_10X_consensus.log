@@ -1,1 +1,5 @@
-Failed to create results/05_Consensus/ERR3343471_bwa_10X_consensus.fasta.tmp: No such file or directory
+Note: the --sample option not given, applying all records regardless of the genotype
+The fasta sequence does not match the REF allele at JAFDOQ010000565.1:112648:
+   REF .vcf: [A]
+   ALT .vcf: [T]
+   REF .fa : [N]NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
