@@ -1,16 +1,33 @@
 #!/bin/bash
+###################configuration slurm##############################
+#SBATCH -A talignani
+#SBATCH --job-name=shave2
+#SBATCH --time=6-23:00:00
+#SBATCH -p normal
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --cpus-per-task 24
+#SBATCH --mem=64GB
+#SBATCH -o cluster_logs/slurm-%x-%j-%N.out
+#SBATCH -e cluster_logs/slurm-%x-%j-%N.err
+#SBATCH --mail-user=loic.talignani@ird.fr
+#SBATCH --mail-type=ALL
+###################################################################
 
-###### Required for ARM64 Macs ####### 
-#First of all, create a new empty osx-64 specific environment :
+# USAGE: sbatch Start_shave_slurm.sh
+
+# set umask to avoid locking each other out of directories
+umask 002
+
+# get variables from workflow/variables.env
+source workflow/variables.env
+
+###### Required for local computing ######
+# For Mac with Apple Silicon processors, create a new empty osx-64 specific environment :
 # conda deactivate base
-# CONDA_SUBDIR=osx-64 conda create -n shave2
-# conda activate shave2
+# CONDA_SUBDIR=osx-64 conda create -n shave
+# conda activate shave
 # conda config --env --set subdir osx-64
-
-# Create a reference.fasta dictionnary and a fasta index for gatk4. ie:
-# gatk CreateSequenceDictionary -R ref.fasta
-# samtools faidx ref.fasta
-# see here for more details: https://gatk.broadinstitute.org/hc/en-us/articles/360035531652-FASTA-Reference-genome-format
 
 ##### Colors ######
 red="\033[1;31m"   # red
@@ -25,12 +42,12 @@ echo -e "${green}---------------------------------------------------------------
 echo -e "${green}#####${nc} ${red}ABOUT${nc} ${green}#####${nc}"
 echo -e "${green}-----------------${nc}"
 echo ""
-echo -e "${blue}Name${nc} __________________ Start_shave2.sh"
+echo -e "${blue}Name${nc} __________________ Start_shave2_slurm.sh"
 echo -e "${blue}Author${nc} ________________ Loïc Talignani"
 echo -e "${blue}Affiliation${nc} ___________ UMR_MIVEGEC"
-echo -e "${blue}Aim${nc} ___________________ Bash script for ${red}SH${nc}ort-read ${red}A${nc}lignment for ${red}VE${nc}ctor pipeline"
+echo -e "${blue}Aim${nc} ___________________ Bash script for ${red}SH${nc}ort-read ${red}A${nc}lignment pipeline for ${red}VE${nc}ctor v.1"
 echo -e "${blue}Date${nc} __________________ 2022.10.05"
-echo -e "${blue}Run${nc} ___________________ bash Start_shave2.sh"
+echo -e "${blue}Run${nc} ___________________ bash Start_shave2_slurm.sh"
 echo -e "${blue}Latest Modification${nc} ___ "
 
 
@@ -58,8 +75,8 @@ echo -e "${blue}Operating system${nc} _______ ${red}${os}${nc}" # Print operatin
 ###### Hardware ######
 echo ""
 echo -e "${green}------------------------------------------------------------------------${nc}"
-echo -e "${green}#####${nc} ${red}HARDWARE${nc} ${green}#####${nc}"
-echo -e "${green}--------------------${nc}"
+echo -e "${green}###########${nc} ${red}HARDWARE CHARACTERISTICS${nc} ${green}###########${nc}"
+echo -e "${green}------------------------------------------------------------------------${nc}"
 echo ""
 
 if [[ ${os} == "OSX" ]]
@@ -91,8 +108,8 @@ echo -e "${blue}System Memory${nc} _________ ${red}${ram_size}${nc} Gb of RAM"  
 ###### Settings ######
 echo ""
 echo -e "${green}------------------------------------------------------------------------${nc}"
-echo -e "${green}#####${nc} ${red}SETTINGS${nc} ${green}#####${nc}"
-echo -e "${green}--------------------${nc}"
+echo -e "${green}###################${nc} ${red}SETTINGS${nc} ${green}###################${nc}"
+echo -e "${green}------------------------------------------------------------------------${nc}"
 echo ""
 
 workdir=$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)                                          # Get working directory
@@ -121,8 +138,8 @@ echo -e "${blue}Start Time${nc} ____________ ${time_stamp_start}"               
 ###### Installations ######
 echo ""
 echo -e "${green}------------------------------------------------------------------------${nc}"
-echo -e "${green}#####${nc} ${red}INSTALLATIONS${nc} ${green}#####${nc}"
-echo -e "${green}-------------------------${nc}"
+echo -e "${green}#########${nc} ${red}APPS INSTALLATIONS WITH CONDA${nc} ${green}########${nc}"
+echo -e "${green}------------------------------------------------------------------------${nc}"
 echo ""
 
 # Snakemake
@@ -135,16 +152,6 @@ then
 else
 
     conda install -c conda-forge -c bioconda snakemake==${snake_ver} --yes
-fi
-
-# snakemake-wrapper-utils
-if ls ~/miniconda3/bin/snakemake-wrapper-utils 2> /dev/null
-then
-    echo ""
-#   source ${HOME}/miniconda3/etc/profile.d/conda.sh
-else
-
-    conda install -c bioconda snakemake-wrapper-utils --yes
 fi
 
 # Rename
@@ -166,16 +173,6 @@ else
     conda install -c conda-forge -c bioconda gatk==${gatk_ver} --yes
 fi
 
-# gatk4
-if ls ~/miniconda3/bin/gatk4 2> /dev/null
-then
-    echo ""
-#   source ${HOME}/miniconda3/etc/profile.d/conda.sh
-else
-
-    conda install -c bioconda gatk4 --yes
-fi
-
 # Picard tools
 picard_ver="2.27.4"
 if ls ~/miniconda3/bin/picard 2> /dev/null
@@ -185,28 +182,25 @@ else
     conda install -c bioconda picard==${picard_ver} --yes
 fi
 
-
 ###### Rename samples ######
 echo ""
 echo -e "${green}------------------------------------------------------------------------${nc}"
-echo -e "${green}#####${nc} ${red}RENAME FASTQ FILES${nc} ${green}#####${nc}"
-echo -e "${green}------------------------------${nc}"
+echo -e "${green}##############${nc} ${red}RENAME FASTQ FILES${nc} ${green}##############${nc}"
+echo -e "${green}------------------------------------------------------------------------${nc}"
 echo ""
 
 # Rename fastq files to remove "_001" Illumina pattern.
 ## De/comment (#) if you want keep Illumina barcode-ID and/or Illumina line-ID
 #rename "s/_S\d+_/_/" ${workdir}/resources/reads/*.fastq.gz                 # Remove barcode-ID like {_S001_}
-rename -v "s/_L\d+_/_/" ${workdir}/resources/reads/*.fastq.gz                  # Remove line-ID ID like {_L001_}
-rename -v "s/_001.fastq.gz/.fastq.gz/" ${workdir}/resources/reads/*.fastq.gz   # Remove end-name ID like {_001}.fastq.gz
-rename -v "s/.1.fastq.gz/ _R1.fastq.gz" ${workdir}/resources/reads/*.fastq.gz   # Remove end-name ID like {.1}.fastq.gz
-rename -v "s/.2.fastq.gz/ _R2.fastq.gz" ${workdir}/resources/reads/*.fastq.gz   # Remove end-name ID like {.2}.fastq.gz
-rename -v "s/*.fq.gz/ *.fastq.gz" ${workdir}/resources/reads/*.fastq.gz   # Rename suffix like .fq.gz
+rename "s/_L\d+_/_/" ${workdir}/resources/reads/*.fastq.gz                  # Remove line-ID ID like {_L001_}
+rename "s/_001.fastq.gz/.fastq.gz/" ${workdir}/resources/reads/*.fastq.gz   # Remove end-name ID like {_001}.fastq.gz
+#rename 's/(\w_).*_(R[1-2]).*(.fastq.gz)/$1$2$3/' *.fastq.gz                 # Keep only expr. in ( )
 
 ###### Call snakemake pipeline ######
 echo ""
 echo -e "${green}------------------------------------------------------------------------${nc}"
-echo -e "${green}#####${nc} ${red}SNAKEMAKE PIPELINE${nc} ${green}#####${nc}"
-echo -e "${green}------------------------------${nc}"
+echo -e "${green}###########${nc} ${red}SNAKEMAKE PIPELINE START${nc} ${green}###########${nc}"
+echo -e "${green}------------------------------------------------------------------------${nc}"
 echo ""
 
 echo -e "${blue}Unlocking working directory:${nc}"
@@ -217,6 +211,7 @@ echo ""
 # Re-run all jobs the output of which is recognized as incomplete.
 # Remove a lock on the working directory.
 snakemake \
+    --profile workflow/profiles/slurm \
     --directory ${workdir}/ \
     --snakefile ${workdir}/workflow/rules/shave2.smk \
     --config os=${os} \
@@ -233,6 +228,7 @@ echo ""
 # Re-run all jobs the output of which is recognized as incomplete.
 # List all conda environments and their location on disk.
 snakemake \
+    --profile workflow/profiles/slurm \
     --directory ${workdir}/ \
     --snakefile ${workdir}/workflow/rules/shave2.smk \
     --cores ${max_threads} \
@@ -250,6 +246,7 @@ echo ""
 # Set or overwrite values in the workflow config object.
 # Cleanup unused conda environments.
 snakemake \
+    --profile workflow/profiles/slurm \
     --directory ${workdir}/ \
     --snakefile ${workdir}/workflow/rules/shave2.smk \
     --cores ${max_threads} \
@@ -269,6 +266,7 @@ echo ""
 # If specified, only creates the job-specific conda environments then exits. The –use-conda flag must also be set.
 # If mamba package manager is not available, or if you still prefer to use conda, you can enforce that with this setting (default: 'mamba').
 snakemake \
+    --profile workflow/profiles/slurm \
     --directory ${workdir}/ \
     --snakefile ${workdir}/workflow/rules/shave2.smk \
     --cores ${max_threads} \
@@ -291,6 +289,7 @@ echo ""
 # Do not execute anything, and display what would be done. If very large workflow, use –dry-run –quiet to just print a summary of the DAG of jobs.
 # Do not output any progress or rule information.
 snakemake \
+    --profile workflow/profiles/slurm \
     --directory ${workdir}/ \
     --snakefile ${workdir}/workflow/rules/shave2.smk \
     --cores ${max_threads}\
@@ -316,6 +315,7 @@ echo ""
 # Tell the scheduler to assign creation of given targets (and all their dependencies) highest priority.
 # Print out the shell commands that will be executed.
 snakemake \
+    --profile workflow/profiles/slurm \
     --directory ${workdir}/ \
     --snakefile ${workdir}/workflow/rules/shave2.smk \
     --cores ${max_threads} \
@@ -332,18 +332,19 @@ snakemake \
 ###### Create usefull graphs, summary and logs ######
 echo ""
 echo -e "${green}------------------------------------------------------------------------${nc}"
-echo -e "${green}#####${nc} ${red}SNAKEMAKE PIPELINE LOGS${nc} ${green}#####${nc}"
-echo -e "${green}-------------------------------------${nc}"
+echo -e "${green}###########${nc} ${red}SNAKEMAKE PIPELINE LOGS${nc} ${green}############${nc}"
+echo -e "${green}------------------------------------------------------------------------${nc}"
 echo ""
 
 mkdir ${workdir}/results/10_Graphs/ 2> /dev/null
 
-graph_list="dag rulegraph filegraph"
+graph_list="shave_dag shave_rulegraph shave_filegraph"
 extention_list="pdf png"
 
 for graph in ${graph_list} ; do
     for extention in ${extention_list} ; do
 	snakemake \
+        --profile workflow/profiles/slurm \
 	    --directory ${workdir}/ \
             --snakefile ${workdir}/workflow/rules/shave2.smk \
             --${graph} | \
@@ -353,6 +354,7 @@ for graph in ${graph_list} ; do
 done
 
 snakemake \
+    --profile workflow/profiles/slurm \
     --directory ${workdir} \
     --snakefile ${workdir}/workflow/rules/shave2.smk \
     --summary > ${workdir}/results/11_Reports/files_summary.txt
@@ -375,25 +377,21 @@ echo "Min. Coverage _________ ${min_cov}" >> ${workdir}/results/11_Reports/setti
 echo "Min. Allele Frequency _ ${min_af}" >> ${workdir}/results/11_Reports/settings.log                                                      # Log user config snvs cov min
 echo "Start Time ____________ ${time_stamp_start}" >> ${workdir}/results/11_Reports/settings.log                                            # Log analyzes starting time
 
-
-###### Concatenate all consensus fasta ######
+###### copy multiqc_report.html to results/ dir root ######
 echo ""
-echo -e "${green}------------------------------------------------------------------------${nc}"
-echo -e "${green}#####${nc} ${red}CONCATENATE FASTA FILES${nc} ${green}#####${nc}"
-echo -e "${green}-----------------------------------${nc}"
+echo -e "${blue}------------------------------------------------------------------------${nc}"
+echo -e "${blue}#############${nc} ${red}COPY QC REPORT TO ROOT${nc} ${blue}############${nc}"
+echo -e "${blue}------------------------------------------------------------------------${nc}"
 echo ""
-
-cat ${workdir}/results/05_Consensus/*_consensus.fasta > ${workdir}/results/All_consensus_sequences.fasta
 
 # and copy multiqc_report.html to results/ dir root
 cp ${workdir}/results/00_Quality_Control/multiqc/multiqc_report.html ${workdir}/results/All_readsQC_reports.html
 
-
 ###### Concatenate all coverage stats ######
 echo ""
-echo -e "${green}------------------------------------------------------------------------${nc}"
-echo -e "${green}#####${nc} ${red}CONCATENATE COVERAGE STATS${nc} ${green}#####${nc}"
-echo -e "${green}--------------------------------------${nc}"
+echo -e "${blue}------------------------------------------------------------------------${nc}"
+echo -e "${blue}###########${nc} ${red}CONCATENATE COVERAGE STATS${nc} ${blue}##########${nc}"
+echo -e "${blue}------------------------------------------------------------------------${nc}"
 echo ""
 
 cat ${workdir}/results/03_Coverage/*coverage-stats.tsv > ${workdir}/results/All_genome_coverages.tsv
@@ -401,11 +399,12 @@ cat ${workdir}/results/03_Coverage/*coverage-stats.tsv > ${workdir}/results/All_
 awk "NR==1 || NR%2==0" ${workdir}/results/All_genome_coverages.tsv > ${workdir}/results/GENCOV.tmp \
     && mv ${workdir}/results/GENCOV.tmp ${workdir}/results/All_genome_coverages.tsv
 
+
 ###### End managment ######
 echo ""
-echo -e "${green}------------------------------------------------------------------------${nc}"
-echo -e "${green}#####${nc} ${red}SCRIPT END${nc} ${green}#####${nc}"
-echo -e "${green}----------------------${nc}"
+echo -e "${blue}------------------------------------------------------------------------${nc}"
+echo -e "${blue}##################${nc} ${red}SCRIPT END${nc} ${blue}###################${nc}"
+echo -e "${blue}------------------------------------------------------------------------${nc}"
 echo ""
 
 find ${workdir}/results/ -type f -empty -delete                 # Remove empty file (like empty log)
@@ -416,9 +415,9 @@ elapsed_time=${SECONDS}                                         # Get SECONDS co
 minutes=$((${elapsed_time}/60))                                 # / 60 = minutes
 seconds=$((${elapsed_time}%60))                                    # % 60 = seconds
 
-echo -e "${blue}End Time${nc} ______________ ${time_stamp_end}"                                                             # Print analyzes ending time
-echo -e "${blue}Processing Time${nc} _______ ${ylo}${minutes}${nc} minutes and ${ylo}${seconds}${nc} seconds elapsed"       # Print total time elapsed
+echo -e "${red}End Time${nc} ______________ ${time_stamp_end}"                                                             # Print analyzes ending time
+echo -e "${red}Processing Time${nc} _______ ${ylo}${minutes}${nc} minutes and ${ylo}${seconds}${nc} seconds elapsed"       # Print total time elapsed
 
 echo ""
-echo -e "${green}------------------------------------------------------------------------${nc}"
+echo -e "${blue}------------------------------------------------------------------------${nc}"
 echo ""

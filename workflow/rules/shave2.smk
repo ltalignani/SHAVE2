@@ -5,7 +5,7 @@
 # Aim:                  Snakefile for SHort-read Alignment for VEctor pipeline
 # Date:                 2022.10.05
 # Run:                  snakemake --snakefile shave2.smk --cores X --use-conda
-# Latest modification:  2022.10.07
+# Latest modification:  2022.11.24
 # Done:                 Added HaplotypeCaller, GenotypeGVCFs, VariantFiltration
 
 ###############################################################################
@@ -16,10 +16,9 @@
 configfile: "config/config.yaml"
 
 from snakemake.utils import min_version
-
 min_version("5.18.0")
 
-report: "../report/workflow.rst"
+import shutil
 
 ###############################################################################
 # WILDCARDS #
@@ -67,6 +66,7 @@ MAPPER = config["fastq-screen"]["aligner"]          # Fastq-screen --aligner
 SUBSET = config["fastq-screen"]["subset"]           # Fastq-screen --subset
 
 ALIGNER = config["aligner"]                         # Aligners ('bwa' or 'bowtie2')
+MARKDUP = config["markdup"]                         # Mark Duplicate Program ('picard' or 'samtools')
 
 BWAPATH = config["bwa"]["path"]                     # BWA path to indexes
 BT2PATH = config["bowtie2"]["path"]                 # Bowtie2 path to indexes
@@ -79,30 +79,41 @@ MINAF = config["consensus"]["minaf"]                # Minimum allele frequency a
 IUPAC = config["consensus"]["iupac"]                # Output variants in the form of IUPAC ambiguity codes
 
 ###############################################################################
-# FUNCTIONS #
+# FUNCTIONS AND COMMANDS#
 
-###############################################################################
+############################### O N S T A R T ################################
+onstart:
+    print("##### Creating profile pipeline #####\n") 
+    print("\t Creating jobs output subfolders...\n")
+    shell("mkdir -p Cluster_logs/haplotypecaller")
+    shell("mkdir -p Cluster_logs/bwa_mapping")
+
+############################# O N S U C C E S S ##############################
+onsuccess:
+    shutil.rmtree(".snakemake")
+
+################################## A L L #####################################
 rule all:
     input:
         multiqc = "results/00_Quality_Control/multiqc/",
         fastqc = "results/00_Quality_Control/fastqc/",
         fastqscreen = "results/00_Quality_Control/fastq-screen/",
-        covstats = expand("results/03_Coverage/{sample}_{aligner}_{mincov}X_coverage-stats.tsv",
-                          sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),
-        index_archive = expand("results/04_Variants/{sample}_{aligner}_{mincov}X_variant-filt.gz.tbi",
-                           sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),        
-        archive = expand("results/04_Variants/{sample}_{aligner}_{mincov}X_variant-filt.vcf.gz",
-                           sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),
-        vcfarchive = expand("results/04_Variants/{sample}_{aligner}_{mincov}X_genotyped.vcf.gz",
-                           sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),       
-        index = expand("results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bai",
-                           sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),        
-        stats = expand("results/05_Validation/{sample}_{aligner}_{mincov}X_indel-qual.txt",
-                           sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),
-        callable_loci = expand("results/05_Validation/callableloci/{sample}_{aligner}_{mincov}X_indel-qual_callable_status.bed",
-                           sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV),
-        check = expand("results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bam",
-                           sample = SAMPLE, aligner = ALIGNER, mincov = MINCOV)
+        covstats = expand("results/03_Coverage/{sample}_{aligner}_{markdup}_{mincov}X_coverage-stats.tsv",
+                          sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV),
+        index_archive = expand("results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_variant-filt.gz.tbi",
+                           sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV),        
+        archive = expand("results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_variant-filt.vcf.gz",
+                           sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV),
+        vcfarchive = expand("results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_genotyped.vcf.gz",
+                           sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV),       
+        index = expand("results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bai",
+                           sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV),        
+        stats = expand("results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.txt",
+                           sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV),
+        callable_loci = expand("results/05_Validation/callableloci/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_callable_status.bed",
+                           sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV),
+        check = expand("results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam",
+                           sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV)
 
 ###############################################################################
 rule tabix_tabarch_indexing:
@@ -113,11 +124,11 @@ rule tabix_tabarch_indexing:
     conda:
         SAMTOOLS
     input:
-        archive = "results/04_Variants/{sample}_{aligner}_{mincov}X_variant-filt.vcf.gz"
+        archive = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_variant-filt.vcf.gz"
     output:
-        index = "results/04_Variants/{sample}_{aligner}_{mincov}X_variant-filt.gz.tbi"
+        index = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_variant-filt.gz.tbi"
     log:
-        "results/11_Reports/tabix/{sample}_{aligner}_{mincov}X_variant-archive-index.log"
+        "results/11_Reports/tabix/{sample}_{aligner}_{markdup}_{mincov}X_variant-archive-index.log"
     shell:
         "tabix "             # Tabix, indexes a TAB-delimited genome position file in.tab.bgz and creates an index file
         "{input.archive} "   # The input data file must be position sorted and compressed by bgzip
@@ -133,18 +144,18 @@ rule bcftools_variant_filt_archive:
         "Bgzip variant block compressing for {wildcards.sample} sample ({wildcards.aligner}-{wildcards.mincov})"
     conda:
         BCFTOOLS
-    resources:
-        cpus = CPUS
+    threads:
+        CPUS
     input:
-        variantfilt = "results/04_Variants/variantfiltration/{sample}_{aligner}_{mincov}X_hardfiltered.vcf"                  #results/04_Variants/lofreq/{sample}_{aligner}_{mincov}X_variant-filt.vcf"
+        variantfilt = "results/04_Variants/variantfiltration/{sample}_{aligner}_{markdup}_{mincov}X_hardfiltered.vcf"                  #results/04_Variants/lofreq/{sample}_{aligner}_{mincov}X_variant-filt.vcf"
     output:
-        archive = "results/04_Variants/{sample}_{aligner}_{mincov}X_variant-filt.vcf.gz"
+        archive = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_variant-filt.vcf.gz"
     log:
-        "results/11_Reports/bcftools/{sample}_{aligner}_{mincov}X_variant-archive.log"
+        "results/11_Reports/bcftools/{sample}_{aligner}_{markdup}_{mincov}X_variant-archive.log"
     shell:
         "bcftools "                         # bcftools,  a set of utilities that manipulate variant calls in the Variant Call Format (VCF).
         "view "                             # view : subset, filter and convert VCF and BCF files
-        "--threads {resources.cpus} "       # -@: Number of threads to use (default: 1)
+        "--threads {threads} "              # -@: Number of threads to use (default: 1)
         "{input.variantfilt} "              # VCF input file,
         "-Oz -o {output.archive} "          # -O[z|b]: output-type -o: VCF output file,
         "&> {log}"                          # Log redirection
@@ -154,18 +165,18 @@ rule hard_filter_calls:
     # Aim: Perform joint genotyping on one or more samples pre-called with HaplotypeCaller.
     # In any case, the input samples must possess genotype likelihoods produced by HaplotypeCaller with `-ERC GVCF` or `-ERC BP_RESOLUTION`.
     # Use: gatk --java-options "-Xmx4g" GenotypeGVCFs \
-    # -R Homo_sapiens_assembly38.fasta \
-    # -V input.g.vcf.gz \
-    # -O output.vcf.gz
+    #      -R Homo_sapiens_assembly38.fasta \
+    #      -V input.g.vcf.gz \
+    #      -O output.vcf.gz
     message:
         "Hard-filtering for {wildcards.sample} sample ({wildcards.aligner}-{wildcards.mincov})"
     conda:
         GATK4
     input:
         ref="resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta",
-        vcf="results/04_Variants/genotypegvcfs/{sample}_{aligner}_{mincov}X_genotyped.vcf",
+        vcf="results/04_Variants/genotypegvcfs/{sample}_{aligner}_{markdup}_{mincov}X_genotyped.vcf",
     output:
-        vcf=temp("results/04_Variants/variantfiltration/{sample}_{aligner}_{mincov}X_hardfiltered.vcf"),
+        vcf=temp("results/04_Variants/variantfiltration/{sample}_{aligner}_{markdup}_{mincov}X_hardfiltered.vcf"),
     params:
         filters={"myfilter": "QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0"},
         extra="",
@@ -175,9 +186,9 @@ rule hard_filter_calls:
     threads: 
         CPUS
     benchmark:
-        "benchmarks/variantfiltration/{sample}_{aligner}_{mincov}X_hardfiltered.tsv"
+        "benchmarks/variantfiltration/{sample}_{aligner}_{markdup}_{mincov}X_hardfiltered.tsv"
     log:
-        "results/11_Reports/variantfiltration/{sample}_{aligner}_{mincov}X_hardfiltered.log",
+        "results/11_Reports/variantfiltration/{sample}_{aligner}_{markdup}_{mincov}X_hardfiltered.log",
     wrapper:
         "0.74.0/bio/gatk/variantfiltration"
 
@@ -189,56 +200,70 @@ rule bcftools_genotype_gvcfs_archive:
         "Bgzip variant block compressing for {wildcards.sample} sample ({wildcards.aligner}-{wildcards.mincov})"
     conda:
         BCFTOOLS
-    resources:
-        cpus = CPUS
+    threads:
+        CPUS
     input:
-        vcf = "results/04_Variants/genotypegvcfs/{sample}_{aligner}_{mincov}X_genotyped.vcf"                  #results/04_Variants/lofreq/{sample}_{aligner}_{mincov}X_variant-filt.vcf"
+        vcf = "results/04_Variants/genotypegvcfs/{sample}_{aligner}_{markdup}_{mincov}X_genotyped.vcf"                  #results/04_Variants/lofreq/{sample}_{aligner}_{mincov}X_variant-filt.vcf"
     output:
-        vcfarchive = "results/04_Variants/{sample}_{aligner}_{mincov}X_genotyped.vcf.gz"
+        vcfarchive = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_genotyped.vcf.gz"
     log:
-        "results/11_Reports/bcftools/{sample}_{aligner}_{mincov}X_variant-archive.log"
+        "results/11_Reports/bcftools/{sample}_{aligner}_{markdup}_{mincov}X_variant-archive.log"
     shell:
         "bcftools "                         # bcftools,  a set of utilities that manipulate variant calls in the Variant Call Format (VCF).
         "view "                             # view : subset, filter and convert VCF and BCF files
-        "--threads {resources.cpus} "       # -@: Number of threads to use (default: 1)
+        "--threads {threads} "              # -@: Number of threads to use (default: 1)
         "{input.vcf} "                      # VCF input file, 
-        "-Oz -o {output.vcfarchive} "          # -O[z|b]: output-type -o: VCF output file,
+        "-Oz -o {output.vcfarchive} "       # -O[z|b]: output-type -o: VCF output file,
         "&> {log}"                          # Log redirection
 
 ###############################################################################
 rule genotype_gvcfs:
+    # Aim: Perform joint genotyping on one or more samples pre-called with HaplotypeCaller.
+    # In any case, the input samples must possess genotype likelihoods produced by HaplotypeCaller with `-ERC GVCF` or `-ERC BP_RESOLUTION`.
+    # Use: gatk --java-options "-Xmx4g" GenotypeGVCFs \
+    #      -R Homo_sapiens_assembly38.fasta \
+    #      -V input.g.vcf.gz \
+    #      -O output.vcf.gz
     input:
-        gvcf="results/04_Variants/haplotypecaller/{sample}_{aligner}_{mincov}X_variant-call.g.vcf",  # combined gvcf over multiple samples
-    # N.B. gvcf or genomicsdb must be specified
-    # in the latter case, this is a GenomicsDB data store
+        gvcf="results/04_Variants/haplotypecaller/{sample}_{aligner}_{markdup}_{mincov}X_variant-call.g.vcf",  # combined gvcf over multiple samples
+        # N.B. gvcf or genomicsdb must be specified
+        # in the latter case, this is a GenomicsDB data store
         ref="resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta"
     output:
-        vcf=temp("results/04_Variants/genotypegvcfs/{sample}_{aligner}_{mincov}X_genotyped.vcf")
+        vcf=temp("results/04_Variants/genotypegvcfs/{sample}_{aligner}_{markdup}_{mincov}X_genotyped.vcf")
     log:
-        "results/11_Reports/genotypegvcfs/{sample}_{aligner}_{mincov}X_genotypegvcfs.log"
+        "results/11_Reports/genotypegvcfs/{sample}_{aligner}_{markdup}_{mincov}X_genotypegvcfs.log"
     params:
         extra="",  # optional
         java_opts="", # optional
     resources:
         mem_mb=16000
     benchmark:
-        "benchmarks/genotypegvcfs/{sample}_{aligner}_{mincov}X_genotyped.tsv"
+        "benchmarks/genotypegvcfs/{sample}_{aligner}_{markdup}_{mincov}X_genotyped.tsv"
     wrapper:
         "v1.16.0/bio/gatk/genotypegvcfs"
 
 ###############################################################################
 rule haplotype_caller_gvcf:
+    # Aim: Call germline SNPs and indels via local re-assembly of haplotypes
+    # Use: gatk --java-options "-Xmx4g" HaplotypeCaller  \
+    #      -R Homo_sapiens_assembly38.fasta \
+    #      -I input.bam \
+    #      -O output.g.vcf.gz \
+    #      -ERC GVCF
+    message:
+        "GATK's HaplotypeCaller SNPs and indels calling for {wildcards.sample} sample ({wildcards.aligner})"
     input:
         # single or list of bam files
-        bam="results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bam",
-        index = "results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bai",
+        bam="results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam",
+        index = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bai",
         ref="resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta",
         # known="dbsnp.vcf"  # optional
     output:
-        gvcf=temp("results/04_Variants/haplotypecaller/{sample}_{aligner}_{mincov}X_variant-call.g.vcf"),
+        gvcf=temp("results/04_Variants/haplotypecaller/{sample}_{aligner}_{markdup}_{mincov}X_variant-call.g.vcf"),
     #       bam="{sample}.assemb_haplo.bam",
     log:
-        "results/11_Reports/haplotypecaller/{sample}_{aligner}_{mincov}X_variant-call.log",
+        "results/11_Reports/haplotypecaller/{sample}_{aligner}_{markdup}_{mincov}X_variant-call.log",
     params:
         extra="", 
         java_opts="",  # optional
@@ -246,7 +271,7 @@ rule haplotype_caller_gvcf:
     resources:
         mem_mb=16000,
     benchmark:
-        "benchmarks/haplotypecaller/{sample}_{aligner}_{mincov}X_variant-call.tsv"
+        "benchmarks/haplotypecaller/{sample}_{aligner}_{markdup}_{mincov}X_variant-call.tsv"
     wrapper:
         "v1.16.0/bio/gatk/haplotypecaller"
 
@@ -258,18 +283,18 @@ rule samtools_stats:
         "SamTools indexing marked as duplicate BAM file {wildcards.sample} sample ({wildcards.aligner})"
     conda:
         SAMTOOLS
-    resources:
-       cpus = CPUS
+    threads:
+        CPUS
     input:
-        bam = "results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bam",
+        bam = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam",
         refpath = "resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta"
     output:
-        stats = "results/05_Validation/{sample}_{aligner}_{mincov}X_indel-qual.txt"
+        stats = "results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.txt"
     log:
-        "results/11_Reports/samtools/{sample}_{aligner}_{mincov}X_indel-qual.log"
+        "results/11_Reports/samtools/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.log"
     shell:
         "samtools stats "                                                   # Samtools stats, collects statistics from BAM files. The output can be visualized using plot-bamstats.
-        "--threads {resources.cpus} "                                       # -@: Number of additional threads to use (default: 1)
+        "--threads {threads} "                                              # -@: Number of additional threads to use (default: 1)
         "-r {input.refpath} "                                               # -r: Reference sequence (required for GC-depth and mismatches-per-cycle calculation).
         "{input.bam} "                                                      # mark-dup bam input
         "1> {output.stats} "                                                # stats output
@@ -299,12 +324,13 @@ rule callable_loci:
         GATK
     input:
         refpath = "resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta",
-        bam = "results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bam"
+        bam = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam",
+        index = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bai",
     output:
-        call = "results/05_Validation/callableloci/{sample}_{aligner}_{mincov}X_indel-qual_callable_status.bed",
-        summary = "results/05_Validation/callableloci/{sample}_{aligner}_{mincov}X_indel-qual_summary_table.txt"
+        call = "results/05_Validation/callableloci/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_callable_status.bed",
+        summary = "results/05_Validation/callableloci/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_summary_table.txt"
     log :
-        "results/11_reports/callableloci/{sample}_{aligner}_{mincov}X_indel-qual_callable_status.log"
+        "results/11_reports/callableloci/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_callable_status.log"
     shell:
         "gatk3 -T CallableLoci -R {input.refpath} -I {input.bam} -summary {output.summary} -o {output.call}" #  > {log} 2>&1
 
@@ -317,13 +343,13 @@ rule validate_sam:
     message:
         "Picard ValidateSamFile for {wildcards.sample} sample ({wildcards.aligner})"
     input:
-        bam = "results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bam",
-        index = "results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bai",
+        bam = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam",
+        index = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bai",
         refpath = "resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta",
     output:
-        check = "results/05_Validation/validatesamfile/{sample}_{aligner}_{mincov}X_indel-qual.txt"
+        check = "results/05_Validation/validatesamfile/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.txt"
     log:
-        "results/11_Reports/validatesamfiles/{sample}_{aligner}_{mincov}X_indel-qual.log"
+        "results/11_Reports/validatesamfiles/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.log"
     shell:
         """
         picard ValidateSamFile -I {input.bam} -R {input.refpath} -O {output.check} --VERBOSITY ERROR > {log} 2>&1
@@ -337,19 +363,19 @@ rule samtools_indel_indexing:
         "SamTools indexing indel qualities BAM file {wildcards.sample} sample ({wildcards.aligner}-{wildcards.mincov})"
     conda:
         SAMTOOLS
-    resources:
-       cpus = CPUS
+    threads:
+       CPUS
     input:
-        indelqual = "results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bam"
+        indelqual = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam"
     output:
-        index = "results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bai"
+        index = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bai"
     log:
-        "results/11_Reports/samtools/{sample}_{aligner}_{mincov}X_indel-qual-index.log"
+        "results/11_Reports/samtools/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual-index.log"
     threads: 
         CPUS
     shell:
-        "samtools index "     # Samtools index, tools for alignments in the SAM format with command to index alignment
-        "-@ {resources.cpus} " # Number of additional threads to use (default: 0)
+        "samtools index "      # Samtools index, tools for alignments in the SAM format with command to index alignment
+        "-@ {threads} "        # Number of additional threads to use (default: 0)
         "-b "                  # -b: Generate BAI-format index for BAM files (default)
         "{input.indelqual} "   # Sorted bam input
         "{output.index} "      # Markdup bam output
@@ -366,12 +392,12 @@ rule lofreq_indel_qualities:
     conda:
         LOFREQ
     input:
-        maskedref = "results/04_Variants/{sample}_{aligner}_{mincov}X_masked-ref.fasta",
-        markdup = "results/02_Mapping/{sample}_{aligner}_mark-dup.bam"
+        maskedref = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_masked-ref.fasta",
+        markdup = "results/02_Mapping/{sample}_{aligner}_{markdup}-mark-dup.bam"
     output:
-        indelqual = "results/04_Variants/{sample}_{aligner}_{mincov}X_indel-qual.bam"
+        indelqual = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam"
     log:
-        "results/11_Reports/lofreq/{sample}_{aligner}_{mincov}X_indel-qual.log"
+        "results/11_Reports/lofreq/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.log"
     shell:
         "lofreq "                  # LoFreq, fast and sensitive inference of SNVs and Indels
         "indelqual "                # Insert indel qualities into BAM file (required for indel predictions)
@@ -393,11 +419,11 @@ rule bedtools_masking:
         path = REFPATH,
         reference = REFERENCE
     input:
-        lowcovmask = "results/03_Coverage/{sample}_{aligner}_{mincov}X_low-cov-mask.bed"
+        lowcovmask = "results/03_Coverage/{sample}_{aligner}_{markdup}_{mincov}X_low-cov-mask.bed"
     output:
-        maskedref = "results/04_Variants/{sample}_{aligner}_{mincov}X_masked-ref.fasta"
+        maskedref = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_masked-ref.fasta"
     log:
-        "results/11_Reports/bedtools/{sample}_{aligner}_{mincov}X_masking.log"
+        "results/11_Reports/bedtools/{sample}_{aligner}_{markdup}_{mincov}X_masking.log"
     shell:
         "bedtools maskfasta "                        # Bedtools maskfasta, mask a fasta file based on feature coordinates
         "-fi {params.path}{params.reference} "       # Input FASTA file
@@ -414,11 +440,11 @@ rule bedtools_merged_mask:
     conda:
         BEDTOOLS
     input:
-        mincovfilt = "results/03_Coverage/{sample}_{aligner}_{mincov}X_min-cov-filt.bed"
+        mincovfilt = "results/03_Coverage/{sample}_{aligner}_{markdup}_{mincov}X_min-cov-filt.bed"
     output:
-        lowcovmask = temp("results/03_Coverage/{sample}_{aligner}_{mincov}X_low-cov-mask.bed")
+        lowcovmask = temp("results/03_Coverage/{sample}_{aligner}_{markdup}_{mincov}X_low-cov-mask.bed")
     log:
-        "results/11_Reports/bedtools/{sample}_{aligner}_{mincov}X_merging.log"
+        "results/11_Reports/bedtools/{sample}_{aligner}_{markdup}_{mincov}X_merging.log"
     shell:
         "bedtools merge "        # Bedtools merge, merges overlapping BED/GFF/VCF entries into a single interval
         "-i {input.mincovfilt} "  # -i: BED/GFF/VCF input to merge
@@ -436,11 +462,11 @@ rule awk_mincovfilt:
     params:
         mincov = MINCOV
     input:
-        genomecov = "results/03_Coverage/{sample}_{aligner}_genome-cov.bed"
+        genomecov = "results/03_Coverage/{sample}_{aligner}_{markdup}-genome-cov.bed"
     output:
-        mincovfilt = temp("results/03_Coverage/{sample}_{aligner}_{mincov}X_min-cov-filt.bed")
+        mincovfilt = temp("results/03_Coverage/{sample}_{aligner}_{markdup}_{mincov}X_min-cov-filt.bed")
     log:
-        "results/11_Reports/awk/{sample}_{aligner}_{mincov}X_min-cov-filt.log"
+        "results/11_Reports/awk/{sample}_{aligner}_{markdup}_{mincov}X_min-cov-filt.log"
     shell:
         "awk "                      # Awk, a program that you can use to select particular records in a file and perform operations upon them
         "'$4 < {params.mincov}' "    # Minimum coverage for masking regions in consensus sequence
@@ -459,11 +485,11 @@ rule awk_coverage_stats:
     params:
         mincov = MINCOV
     input:
-        genomecov = "results/03_Coverage/{sample}_{aligner}_genome-cov.bed"
+        genomecov = "results/03_Coverage/{sample}_{aligner}_{markdup}-genome-cov.bed"
     output:
-        covstats = "results/03_Coverage/{sample}_{aligner}_{mincov}X_coverage-stats.tsv"
+        covstats = "results/03_Coverage/{sample}_{aligner}_{markdup}_{mincov}X_coverage-stats.tsv"
     log:
-        "results/11_Reports/awk/{sample}_{aligner}_{mincov}X_coverage-stats.log"
+        "results/11_Reports/awk/{sample}_{aligner}_{markdup}_{mincov}X_coverage-stats.log"
     shell:
         "awk ' "                                  # Awk, a program that you can use to select particular records in a file and perform operations upon them
         "$4 >= {params.mincov} "                   # Minimum coverage
@@ -496,12 +522,12 @@ rule bedtools_genome_coverage:
     conda:
         BEDTOOLS
     input:
-        markdup = "results/02_Mapping/{sample}_{aligner}_mark-dup.bam",
-        index = "results/02_Mapping/{sample}_{aligner}_mark-dup.bai"
+        markdup = "results/02_Mapping/{sample}_{aligner}_{markdup}-mark-dup.bam",
+        index = "results/02_Mapping/{sample}_{aligner}_{markdup}-mark-dup.bai"
     output:
-        genomecov = temp("results/03_Coverage/{sample}_{aligner}_genome-cov.bed")
+        genomecov = temp("results/03_Coverage/{sample}_{aligner}_{markdup}-genome-cov.bed")
     log:
-        "results/11_Reports/bedtools/{sample}_{aligner}_genome-cov.log"
+        "results/11_Reports/bedtools/{sample}_{aligner}_{markdup}-genome-cov.log"
     shell:
         "bedtools genomecov "    # Bedtools genomecov, compute the coverage of a feature file among a genome
         "-bga "                   # Report depth in BedGraph format, regions with zero coverage are also reported
@@ -517,23 +543,45 @@ rule samtools_index_markdup:
         "SamTools indexing marked as duplicate BAM file {wildcards.sample} sample ({wildcards.aligner})"
     conda:
         SAMTOOLS
-    resources:
-       cpus = CPUS
+    threads:
+       CPUS
     input:
-        markdup = "results/02_Mapping/{sample}_{aligner}_mark-dup.bam"
+        markdup = "results/02_Mapping/{sample}_{aligner}_{markdup}-mark-dup.bam"
     output:
-        index = "results/02_Mapping/{sample}_{aligner}_mark-dup.bai"
+        index = "results/02_Mapping/{sample}_{aligner}_{markdup}-mark-dup.bai"
     log:
-        "results/11_Reports/samtools/{sample}_{aligner}_mark-dup-index.log"
+        "results/11_Reports/samtools/{sample}_{aligner}_{markdup}-mark-dup-index.log"
     threads: 
         CPUS
     shell:
-        "samtools index "     # Samtools index, tools for alignments in the SAM format with command to index alignment
-        "-@ {resources.cpus} " # --threads: Number of additional threads to use (default: 1)
+        "samtools index "      # Samtools index, tools for alignments in the SAM format with command to index alignment
+        "-@ {threads} "        # --threads: Number of additional threads to use (default: 1)
         "-b "                  # -b: Generate BAI-format index for BAM files (default)
         "{input.markdup} "     # Markdup bam input
         "{output.index} "      # Markdup index output
         "&> {log}"             # Log redirection
+
+###############################################################################
+rule mark_duplicates_spark:
+    # Aim: marking duplicate alignments.
+    input:
+        calmd = "results/02_Mapping/{sample}_{aligner}_sorted_MD.bam",
+    output:
+        bam = "results/02_Mapping/{sample}_{aligner}_picard-mark-dup.bam",
+        metrics="results/02_Mapping/{sample}_{aligner}_picard-markdup_metrics.txt",
+    log:
+        "results/11_Reports/samtools/{sample}_{aligner}_picard-mark-dup.log",
+    params:
+        extra="--remove-sequencing-duplicates",  # optional
+        java_opts="",  # optional
+        #spark_runner="",  # optional, local by default
+        #spark_v1.19.1="",  # optional
+        #spark_extra="", # optional
+    resources:
+        mem_mb=16000,
+    threads: CPUS
+    wrapper:
+        "v1.19.1/bio/gatk/markduplicatesspark"
 
 ###############################################################################
 rule samtools_markdup:
@@ -543,23 +591,23 @@ rule samtools_markdup:
         "SamTools marking duplicate alignments for {wildcards.sample} sample ({wildcards.aligner})"
     conda:
         SAMTOOLS
-    resources:
-       cpus = CPUS
+    threads:
+       CPUS
     input:
         calmd = "results/02_Mapping/{sample}_{aligner}_sorted_MD.bam"
     output:
-        markdup = "results/02_Mapping/{sample}_{aligner}_mark-dup.bam"
+        markdup = "results/02_Mapping/{sample}_{aligner}_samtools-mark-dup.bam"
     log:
-        "results/11_Reports/samtools/{sample}_{aligner}_mark-dup.log"
+        "results/11_Reports/samtools/{sample}_{aligner}_samtools-mark-dup.log"
     threads: 
         CPUS
     shell:
-        "samtools markdup "          # Samtools markdup, tools for alignments in the SAM format with command mark duplicates
-        "--threads {resources.cpus} " # -@: Number of additional threads to use (default: 1)
+        "samtools markdup "           # Samtools markdup, tools for alignments in the SAM format with command mark duplicates
+        "--threads {threads} "        # -@: Number of additional threads to use (default: 1)
         "-r "                         # -r: Remove duplicate reads
         "-s "                         # -s: Report stats
         "--output-fmt BAM "           # -O: Specify output format: SAM, BAM, CRAM (here, BAM format)
-        "{input.calmd} "             # Sorted bam input
+        "{input.calmd} "              # Sorted bam input
         "{output.markdup} "           # Markdup bam output
         "&> {log}"                    # Log redirection
 
@@ -573,8 +621,8 @@ rule samtools_calmd:
         "SamTools calmd {wildcards.sample} sample reads ({wildcards.aligner})"
     conda:
         SAMTOOLS
-    resources:
-       cpus = CPUS,
+    threads:
+       CPUS,
     params:
         refpath = REFPATH,
         reference = REFERENCE
@@ -588,7 +636,7 @@ rule samtools_calmd:
         CPUS
     shell:
         "samtools calmd "                                               # Samtools calmd, tools to generate the MD tag for SNP/indel calling w/o lookin at the reference
-        "--threads {resources.cpus} "                                   # -@: Number of additional threads to use (default: 1)
+        "--threads {threads} "                                          # -@: Number of additional threads to use (default: 1)
         "-b "                                                           # Output compressed BAM
         "{input.sorted} "                                               # bam input (sorted)
         "{params.refpath}{params.reference} "                           # Reference index filename prefix        
@@ -603,8 +651,9 @@ rule samtools_sorting:
         "SamTools sorting {wildcards.sample} sample reads ({wildcards.aligner})"
     conda:
         SAMTOOLS
+    threads:
+        CPUS
     resources:
-       cpus = CPUS,
        mem_gb = MEM_GB
     params:
         tmpdir = TMPDIR
@@ -617,8 +666,8 @@ rule samtools_sorting:
     threads: 
         CPUS
     shell:
-        "samtools sort "              # Samtools sort, tools for alignments in the SAM format with command to sort alignment file
-        "--threads {resources.cpus} "  # -@: Number of additional threads to use (default: 1)
+        "samtools sort "               # Samtools sort, tools for alignments in the SAM format with command to sort alignment file
+        "--threads {threads} "         # -@: Number of additional threads to use (default: 1)
         "-m {resources.mem_gb}G "      # -m: Set maximum memory per thread, suffix K/M/G recognized (default: 768M)
         "-T {params.tmpdir} "          # -T: Write temporary files to PREFIX.nnnn.bam
         "--output-fmt BAM "            # -O: Specify output format: SAM, BAM, CRAM (here, BAM format)
@@ -634,8 +683,8 @@ rule samtools_fixmate:
         "SamTools filling in mate coordinates {wildcards.sample} sample reads ({wildcards.aligner})"
     conda:
         SAMTOOLS
-    resources:
-        cpus = CPUS
+    threads:
+        CPUS
     input:
         sortbynames = "results/02_Mapping/{sample}_{aligner}_sort-by-names.bam"
     output:
@@ -645,8 +694,8 @@ rule samtools_fixmate:
     threads: 
         CPUS
     shell:
-        "samtools fixmate "           # Samtools fixmate, tools for alignments in the SAM format with command to fix mate information
-        "--threads {resources.cpus} "  # -@: Number of additional threads to use (default: 1)
+        "samtools fixmate "            # Samtools fixmate, tools for alignments in the SAM format with command to fix mate information
+        "--threads {threads} "         # -@: Number of additional threads to use (default: 1)
         "-m "                          # -m: Add mate score tag
         "--output-fmt BAM "            # -O: Specify output format: SAM, BAM, CRAM (here, BAM format)
         "{input.sortbynames} "         # Sortbynames bam input
@@ -661,8 +710,9 @@ rule samtools_sortbynames:
         "SamTools sorting by names {wildcards.sample} sample reads ({wildcards.aligner})"
     conda:
         SAMTOOLS
+    threads:
+        CPUS
     resources:
-        cpus = CPUS,
         mem_gb = MEM_GB
     input:
         mapped = "results/02_Mapping/{sample}_{aligner}-mapped.sam"
@@ -673,8 +723,8 @@ rule samtools_sortbynames:
     threads: 
         CPUS
     shell:
-        "samtools sort "              # Samtools sort, tools for alignments in the SAM format with command to sort alignment file
-        "--threads {resources.cpus} "  # -@: Number of additional threads to use (default: 1)
+        "samtools sort "               # Samtools sort, tools for alignments in the SAM format with command to sort alignment file
+        "--threads {threads} "         # -@: Number of additional threads to use (default: 1)
         "-m {resources.mem_gb}G "      # -m: Set maximum memory per thread, suffix K/M/G recognized (default: 768M)
         "-n "                          # -n: Sort by read name (not compatible with samtools index command)
         "--output-fmt BAM "            # -O: Specify output format: SAM, BAM, CRAM (here, BAM format)
@@ -691,8 +741,8 @@ rule bwa_mapping:
         "BWA-MEM mapping {wildcards.sample} sample reads against reference genome sequence"
     conda:
         BWA
-    resources:
-        cpus = CPUS
+    threads:
+        CPUS
     params:
         bwapath = BWAPATH,
         reference = REFERENCE,
@@ -710,9 +760,9 @@ rule bwa_mapping:
         "bwa mem "                                                  # BWA-MEM algorithm, performs local alignment.
         "-M "                                                       # Mark shorter split hits as secondary (for Picard compatibility). 
         "-T 0 "                                                     # Don’t output alignment with score lower than INT. This option only affects output.
-        "-t {resources.cpus} "                                      # -t: Number of threads (default: 12)
+        "-t {threads} "                                             # -t: Number of threads (default: 12)
         "-v 1 "                                                     # -v: Verbosity level: 1=error, 2=warning, 3=message, 4+=debugging
-        "{params.extra} "                                            #
+        "{params.extra} "                                           #
         "{params.bwapath}{params.reference} "                       # Reference index filename prefix
         "{input.fwdreads} "                                         # Forward input reads
         "{input.revreads} "                                         # Reverse input reads
@@ -727,8 +777,8 @@ rule bowtie2_mapping:
         "Bowtie2 mapping {wildcards.sample} sample reads against reference genome sequence"
     conda:
         BOWTIE2
-    resources:
-        cpus = CPUS
+    threads:
+        CPUS
     params:
         bt2path = BT2PATH,
         reference = REFERENCE,
@@ -745,16 +795,16 @@ rule bowtie2_mapping:
     threads: 
         CPUS
     shell:
-        "bowtie2 "                    # Bowtie2, an ultrafast and memory-efficient tool for aligning sequencing reads to long reference sequences.
-        "--threads {resources.cpus} "  # -p: Number of alignment threads to launch (default: 1)
-        "--reorder "                   # Keep the original read order (if multi-processor option -p is used)
-        "-x {params.bt2path}{params.reference} " # -x: Reference index filename prefix (minus trailing .X.bt2) [Bowtie-1 indexes are not compatible]
-        "{params.sensitivity} "        # Preset (default: "--sensitive", same as [-D 15 -R 2 -N 0 -L 22 -i S,1,1.15])
-        "-q "                          # -q: Query input files are FASTQ .fq/.fastq (default)
-        "-1 {input.fwdreads} "         # Forward input reads
-        "-2 {input.revreads} "         # Reverse input reads
-        "1> {output.mapped} "          # -S: File for SAM output (default: stdout)
-        "2> {log}"                     # Log redirection
+        "bowtie2 "                                # Bowtie2, an ultrafast and memory-efficient tool for aligning sequencing reads to long reference sequences.
+        "--threads {threads} "                    # -p: Number of alignment threads to launch (default: 1)
+        "--reorder "                              # Keep the original read order (if multi-processor option -p is used)
+        "-x {params.bt2path}{params.reference} "  # -x: Reference index filename prefix (minus trailing .X.bt2) [Bowtie-1 indexes are not compatible]
+        "{params.sensitivity} "                   # Preset (default: "--sensitive", same as [-D 15 -R 2 -N 0 -L 22 -i S,1,1.15])
+        "-q "                                     # -q: Query input files are FASTQ .fq/.fastq (default)
+        "-1 {input.fwdreads} "                    # Forward input reads
+        "-2 {input.revreads} "                    # Reverse input reads
+        "1> {output.mapped} "                     # -S: File for SAM output (default: stdout)
+        "2> {log}"                                # Log redirection
 
 ###############################################################################
 rule sickle_trim_quality:
@@ -781,7 +831,7 @@ rule sickle_trim_quality:
     log:
         "results/11_Reports/sickle-trim/{sample}.log"
     shell:
-       "sickle "                # Sickle, a windowed adaptive trimming tool for FASTQ files using quality
+       "sickle "                 # Sickle, a windowed adaptive trimming tool for FASTQ files using quality
         "{params.command} "      # Paired-end or single-end sequence trimming
         "-t {params.encoding} "  # --qual-type: Type of quality values, solexa ; illumina ; sanger ; CASAVA, < 1.3 ; 1.3 to 1.7 ; >= 1.8
         "-q {params.quality} "   # --qual-threshold: Threshold for trimming based on average quality in a window (default: 20)
@@ -803,8 +853,8 @@ rule cutadapt_adapters_removing:
         "Cutadapt adapters removing for {wildcards.sample} sample"
     conda:
         CUTADAPT
-    resources:
-        cpus = CPUS
+    threads:
+        CPUS
     params:
         length = LENGTHc,
         truseq = TRUSEQ,
@@ -823,8 +873,8 @@ rule cutadapt_adapters_removing:
     benchmark:
         "benchmarks/cutadapt/{sample}_cutadapt.tsv"
     shell:
-       "cutadapt "                          # Cutadapt, finds and removes unwanted sequence from your HT-seq reads
-        "--cores {resources.cpus} "          # -j: Number of CPU cores to use. Use 0 to auto-detect (default: 1)
+       "cutadapt "                           # Cutadapt, finds and removes unwanted sequence from your HT-seq reads
+        "--cores {threads} "                 # -j: Number of CPU cores to use. Use 0 to auto-detect (default: 1)
         "--trim-n "                          # --trim-n: Trim N's on ends of reads
         "--minimum-length {params.length} "  # -m: Discard reads shorter than length
         "--adapter {params.truseq} "         # -a: Sequence of an adapter ligated to the 3' end of the first read
@@ -873,8 +923,8 @@ rule fastqscreen_contamination_checking:
         "Fastq-Screen reads contamination checking"
     conda:
         FASTQSCREEN
-    resources:
-        cpus = CPUS
+    threads:
+        CPUS
     params:
         config = CONFIG,
         mapper = MAPPER,
@@ -888,7 +938,7 @@ rule fastqscreen_contamination_checking:
     shell:
         "fastq_screen "                  # FastqScreen, what did you expect ?
         "-q "                            # --quiet: Only show log warning
-        "--threads {resources.cpus} "    # --threads: Specifies across how many threads bowtie will be allowed to run
+        "--threads {threads} "           # --threads: Specifies across how many threads bowtie will be allowed to run
         "--conf {params.config} "        # path to configuration file
         "--aligner {params.mapper} "     # -a: choose aligner 'bowtie', 'bowtie2', 'bwa'
         "--subset {params.subset} "      # Don't use the whole sequence file, but create a subset of specified size
@@ -904,8 +954,8 @@ rule fastqc_quality_control:
         "FastQC reads quality controling"
     conda:
         FASTQC
-    resources:
-        cpus = CPUS
+    threads:
+        CPUS
     input:
         fastq = "resources/reads/"
     output:
@@ -913,11 +963,11 @@ rule fastqc_quality_control:
     log:
         "results/11_Reports/quality/fastqc.log"
     shell:
-        "mkdir -p {output.fastqc} " # (*) this directory must exist as the program will not create it
-        "2> /dev/null && "          # in silence and then...
-        "fastqc "                    # FastQC, a high throughput sequence QC analysis tool
+        "mkdir -p {output.fastqc} "   # (*) this directory must exist as the program will not create it
+        "2> /dev/null && "            # in silence and then...
+        "fastqc "                     # FastQC, a high throughput sequence QC analysis tool
         "--quiet "                    # -q: Supress all progress messages on stdout and only report errors
-        "--threads {resources.cpus} " # -t: Specifies files number which can be processed simultaneously
+        "--threads {threads} "        # -t: Specifies files number which can be processed simultaneously
         "--outdir {output.fastqc} "   # -o: Create all output files in the specified output directory (*)
         "{input.fastq}/*.fastq.gz "   # Input file.fastq
         "&> {log}"                    # Log redirection
