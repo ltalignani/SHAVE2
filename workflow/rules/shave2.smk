@@ -106,11 +106,11 @@ rule all:
                            sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV),
         vcfarchive = expand("results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_genotyped.vcf.gz",
                            sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV),       
-        index = expand("results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bai",
+        index = expand("results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.bai",
                            sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV),        
-        stats = expand("results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.txt",
+        stats = expand("results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.txt",
                            sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV),
-        callable_loci = expand("results/05_Validation/callableloci/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_callable_status.bed",
+        callable_loci = expand("results/05_Validation/callableloci/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate_callable_status.bed",
                            sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV),
         check = expand("results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam",
                            sample = SAMPLE, aligner = ALIGNER, markdup = MARKDUP, mincov = MINCOV)
@@ -255,8 +255,8 @@ rule haplotype_caller_gvcf:
         "GATK's HaplotypeCaller SNPs and indels calling for {wildcards.sample} sample ({wildcards.aligner})"
     input:
         # single or list of bam files
-        bam="results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam",
-        index = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bai",
+        bam="results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.bam",
+        index = "results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.bai",
         ref="resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta",
         # known="dbsnp.vcf"  # optional
     output:
@@ -286,12 +286,12 @@ rule samtools_stats:
     threads:
         CPUS
     input:
-        bam = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam",
+        bam = "results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.bam",
         refpath = "resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta"
     output:
-        stats = "results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.txt"
+        stats = "results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.txt"
     log:
-        "results/11_Reports/samtools/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.log"
+        "results/11_Reports/samtools/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.log"
     shell:
         "samtools stats "                                                   # Samtools stats, collects statistics from BAM files. The output can be visualized using plot-bamstats.
         "--threads {threads} "                                              # -@: Number of additional threads to use (default: 1)
@@ -324,13 +324,13 @@ rule callable_loci:
         GATK
     input:
         refpath = "resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta",
-        bam = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam",
-        index = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bai",
+        bam = "results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.bam",
+        index = "results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.bai",
     output:
-        call = "results/05_Validation/callableloci/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_callable_status.bed",
-        summary = "results/05_Validation/callableloci/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_summary_table.txt"
+        call = "results/05_Validation/callableloci/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate_callable_status.bed",
+        summary = "results/05_Validation/callableloci/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate_summary_table.txt"
     log :
-        "results/11_reports/callableloci/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_callable_status.log"
+        "results/11_reports/callableloci/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate_callable_status.log"
     shell:
         "gatk3 -T CallableLoci -R {input.refpath} -I {input.bam} -summary {output.summary} -o {output.call}" #  > {log} 2>&1
 
@@ -343,13 +343,13 @@ rule validate_sam:
     message:
         "Picard ValidateSamFile for {wildcards.sample} sample ({wildcards.aligner})"
     input:
-        bam = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam",
-        index = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bai",
+        bam = "results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.bam",
+        index = "results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.bai",
         refpath = "resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta",
     output:
-        check = "results/05_Validation/validatesamfile/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.txt"
+        check = "results/05_Validation/validatesamfile/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.txt"
     log:
-        "results/11_Reports/validatesamfiles/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.log"
+        "results/11_Reports/validatesamfiles/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.log"
     shell:
         """
         picard ValidateSamFile -I {input.bam} -R {input.refpath} -O {output.check} --VERBOSITY ERROR > {log} 2>&1
@@ -366,20 +366,45 @@ rule samtools_indel_indexing:
     threads:
        CPUS
     input:
-        indelqual = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam"
+        fixmate = "results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.bam"
     output:
-        index = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bai"
+        index = "results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.bai"
     log:
-        "results/11_Reports/samtools/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual-index.log"
+        "results/11_Reports/samtools/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate-index.log"
     threads: 
         CPUS
     shell:
         "samtools index "      # Samtools index, tools for alignments in the SAM format with command to index alignment
         "-@ {threads} "        # Number of additional threads to use (default: 0)
         "-b "                  # -b: Generate BAI-format index for BAM files (default)
-        "{input.indelqual} "   # Sorted bam input
+        "{input.fixmate} "   # Sorted bam input
         "{output.index} "      # Markdup bam output
         "&> {log}"             # Log redirection
+
+###############################################################################
+rule fixmateinformation:
+    # Aim: This tool ensures that all mate-pair information is in sync between each read and its mate pair.
+    #      If no #OUTPUT file is supplied then the output is written to a temporary file and then copied over 
+    #      the #INPUT file (with the original placed in a .old file.)
+    # Use: picard.jar FixMateInformation \
+    #      -I input.bam \
+    #      -O fixed_mate.bam \
+    #      --ADD_MATE_CIGAR true
+    message:
+        "Picard FixMateInformation for {wildcards.sample} sample ({wildcards.aligner})"
+    conda:
+        PICARD
+    input:
+        bam = "results/04_Variants/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual.bam",
+    output:
+        fixmate = "results/05_Validation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate.bam"
+    threads: CPUS
+    log:
+        "results/11_Reports/fixmateinformation/{sample}_{aligner}_{markdup}_{mincov}X_indel-qual_fixed-mate_bam.log"
+    shell:
+        """
+        picard FixMateInformation -I {input.bam} -O {output.fixmate} --ADD_MATE_CIGAR true
+        """
 
 ###############################################################################
 rule lofreq_indel_qualities:

@@ -29,7 +29,7 @@ echo -e "${blue}Name${nc} __________________ Start_shave2.sh"
 echo -e "${blue}Author${nc} ________________ Loïc Talignani"
 echo -e "${blue}Affiliation${nc} ___________ UMR_MIVEGEC"
 echo -e "${blue}Aim${nc} ___________________ Bash script for ${red}SH${nc}ort-read ${red}A${nc}lignment for ${red}VE${nc}ctor pipeline"
-echo -e "${blue}Date${nc} __________________ 2022.10.05"
+echo -e "${blue}Date${nc} __________________ 2022.11.24"
 echo -e "${blue}Run${nc} ___________________ bash Start_shave2.sh"
 echo -e "${blue}Latest Modification${nc} ___ "
 
