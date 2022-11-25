@@ -41,14 +41,15 @@ Written for **MOVE-ADAPT** project.
 - Control reads quality (_multiQC html report_) and clean it  
 - Align reads (_bam files_), 
 - Fix mates,
-- Add MD tag to BAM files,
+- Add MD and NM tag to BAM files,
 - Mark duplicates to BAM files,
 - BAM file validation according to SAM/BAM specifications,
 - Mask low coverage regions (adjustable threshold),
 - Indels indexing,
 - Variants calling (_vcf files_),
 - Genotyping, newvariant filtering and genome coverage statistics  
-- Consensus sequences (_fasta file_)
+- VCF compression,
+- VCF indexing
 
 ### Version ###
 *V1.2022.10.05*  
@@ -104,7 +105,6 @@ git clone git@github.com:ltalignani/SHAVE2.git
 cd ./SHAVE2/
 ```
 
-
 Difference between **Download** and **Clone**:  
 - To create a copy of a remote repository’s files on your computer, you can either **Download** or **Clone** the repository  
 - If you download it, you **cannot sync** the repository with the remote repository on GitHub  
@@ -143,54 +143,68 @@ This is the main results :
 - **All_readsQC_reports.html**: all reads quality reports from MultiQC, in _html_ format
 
 ### 00_Quality_Control ###
-- **fastq-screen**: raw reads putative contaminations reports for each samples, in _html_, _png_ and _txt_ formats 
-- **fastqc**: raw reads quality reports for each samples, in _html_ and _zip_ formats
-- **multiqc**: fastq-screen and fastqc results agregation report for all samples, in _html_ format
+| File | Object |
+|:--- | :--- |
+| **fastq-screen** | raw reads putative contaminations reports for each samples, in _html_, _png_ and _txt_ formats |
+| **fastqc** | raw reads quality reports for each samples, in _html_ and _zip_ formats |
+| **multiqc** | fastq-screen and fastqc results agregation report for all samples, in _html_ format |
 
 ### 01_Trimming ###
-- **sickle/ directory**: paired reads, without adapters and quality trimmed, in _fastq.gz_ format
-- _cutadapt/ directory: paired reads, without adapters (default config: tempdir, removed, save disk usage)_
+| File | Object |
+|:--- | :--- |
+| **sickle/ directory** | paired reads, without adapters and quality trimmed, in _fastq.gz_ format
+| _cutadapt/ directory_ | paired reads, without adapters (default config: tempdir, removed, save disk usage)_ |
 
 ### 02_Mapping ###
-- **markdup.bam**: read alignments, in _bam_ format _(can be visualized in, i.e. IGV)_
-- **markdup.bai**: bam indexes _bai_ use in i.e. IGV with _./resources/genomes/AalbF3.fasta_
-- _mapped.sam_: (default config: tempdir, removed, save disk usage)_
-- _sortbynames.bam_: (default config: tempdir, removed, save disk usage)_
-- _fixmate.bam_: (default config: tempdir, removed, save disk usage)_
-- _sorted.bam_: (default config: tempdir, removed, save disk usage)_
+
+| File | Object |
+|:--- | :--- |
+| **mark-dup.bam** | read alignments, in _bam_ format _(can be visualized in, i.e. IGV)_ |
+| **mark-dup.bai** | bam indexes _bai_ use in i.e. IGV with _./resources/genomes/AalbF3.fasta_ |
+| **mark-dup.bam.sbi** | bam splitting index (needed by Spark for Picard MarkDuplicates |
+| **markdup_metrics.txt** | bam metrics created by Picard MarkDuplicates |
+| _mapped.sam_ | (default config: tempdir, removed, save disk usage)_ |
+| _sortbynames.bam_ | (default config: tempdir, removed, save disk usage)_ |
+| _fixmate.bam_ | (default config: tempdir, removed, save disk usage)_ |
+| _sorted.bam_ | (default config: tempdir, removed, save disk usage)_ |
+| _sorted_MD.bam_ | (default config: tempdir, removed, save disk usage)_ |
 
 ### 03_Coverage ###
-- **coverage-stats.tsv**: information about genome coverage, in _tsv_ format containing mean coverage depth across all genome reference sequence, standard deviation for mean-depth and genome reference coverage percentage at at-least n X of depth.
+| File | Object |
+|:--- | :--- |
+| **coverage-stats.tsv** | information about genome coverage, in _tsv_ format containing mean coverage depth across all genome reference sequence, standard deviation for mean-depth and genome reference coverage percentage at at-least n X of depth. |
 
 ### 04_Variants ###
-- **maskedref.fasta**: reference sequence, masked for low coverage regions, in _fasta_ format
-- **maskedref.fasta.fai**: reference sequence indexes, masked for low coverages regions, in _fai_ format
-- **indelqual.bam**: read alignments with indel qualities, in _bam_ format _(can be visualized in, i.e. IGV)_
-- **indelqual.bai**: bam indexes _bai_ use in i.e. IGV with _./results/04_Variants/maskedref.fasta_
-- **variant-filt.vcf.gz**: SNVs and Indels passing filters archive, in _vcf.gz_ format
-- **variant-filt.vcf.gz.tbi**: SNVs and Indels passing filters archive indexed, in _vcf.bgz.tbi_ format
-
-- **haplotypecaller directory**, containing:
-- _variant-call.g.vcf_: SNVs and Indels calling in _gvcf_ format (default config: tempdir, removed, save disk usage)_
-- _variant-call.g.vcf.idx_: SNV and Indels calling in _idx_ format (default config: tempdir, removed, save disk usage)_
-
-- **genotypegvcfs directory**, containing:
-- _genotyped.vcf_: SNVs genotyped in _vcf_ format
-- _genotyped.vcf.idx_: genotype index in _idx_ format (automatically generated by GenotypeGVCFs)
-
-- **variantfiltration directory**, containing:
-- _hardfiltered.vcf_: genotyped SNVs hard-filtered, in _vcf_ format (default config: tempdir, removed, save disk usage)_
-- _hardfiltered.vcf.idx_: index in _idx_ format (default config: tempdir, removed, save disk usage)_
+| File | Object |
+|:--- | :--- |
+| **maskedref.fasta** | reference sequence, masked for low coverage regions, in _fasta_ format |
+| **maskedref.fasta.fai** | reference sequence indexes, masked for low coverages regions, in _fai_ format |
+| **indelqual.bam** | read alignments with indel qualities, in _bam_ format _(can be visualized in, i.e. IGV)_ |
+| **indelqual.bai** | bam indexes _bai_ use in i.e. IGV with _./results/04_Variants/maskedref.fasta_ |
+| **variant-filt.vcf.gz** | SNVs and Indels passing filters archive, in _vcf.gz_ format |
+| **variant-filt.vcf.gz.tbi** | SNVs and Indels passing filters archive indexed, in _vcf.bgz.tbi_ format |
+|  |  |
+| **haplotypecaller directory**: |  |
+| _variant-call.g.vcf_ | SNVs and Indels calling in _gvcf_ format (default config: tempdir, removed, save disk usage)_ |
+| _variant-call.g.vcf.idx_ | SNV and Indels calling in _idx_ format (default config: tempdir, removed, save disk usage)_
+|  |  |
+| **genotypegvcfs directory**: |  |
+| _genotyped.vcf_ | SNVs genotyped in _vcf_ format |
+| _genotyped.vcf.idx_ | genotype index in _idx_ format (automatically generated by GenotypeGVCFs) |
+|  |  |
+| **variantfiltration directory**: |  |
+| _hardfiltered.vcf_ | genotyped SNVs hard-filtered, in _vcf_ format (default config: tempdir, removed, save disk usage)_ |
+| _hardfiltered.vcf.idx_ | index in _idx_ format (default config: tempdir, removed, save disk usage)_ |
 
 ### 05_Validation ###
 - **mark-dup.txt**: statistics of all reads, produced by samtools stats, in _txt_ format
 
 ### 10_graphs ###
-- **dag**: directed acyclic graph of jobs, in _pdf_ and _png_ formats
-- **rulegraph**: dependency graph of rules, in _pdf_ and _png_ formats  
-_(less crowded than above DAG of jobs, but also show less information)_  
-- **filegraph**: dependency graph of rules with their input and output files in the dot language, in _pdf_ and _png_ formats  
-_(an intermediate solution between above DAG of jobs and the rule graph)_  
+| File | Object |
+|:--- | :--- |
+| **dag** | directed acyclic graph of jobs, in _pdf_ and _png_ formats |
+| **rulegraph** | dependency graph of rules, in _pdf_ and _png_ formats _(less crowded than above DAG of jobs, but also show less information)_  |
+| **filegraph** | dependency graph of rules with their input and output files in the dot language, in _pdf_ and _png_ formats _(an intermediate solution between above DAG of jobs and the rule graph)_ |
 
 ### 11_Reports ###
 - All _non-empty_ **log** for each tool and each sample
