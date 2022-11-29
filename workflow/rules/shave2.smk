@@ -5,9 +5,9 @@
 # Aim:                  Snakefile for SHort-read Alignment for VEctor pipeline
 # Date:                 2022.10.05
 # Run:                  snakemake --snakefile shave2.smk --cores X --use-conda
-# Latest modification:  2022.11.24
+# Latest modification:  2022.11.28
 # Done:                 Added HaplotypeCaller, GenotypeGVCFs, VariantFiltration
-
+#                       java Garbage Collection limit
 ###############################################################################
 # PUBLICATIONS #
 
@@ -23,6 +23,7 @@ import shutil
 ###############################################################################
 # WILDCARDS #
 SAMPLE, = glob_wildcards("resources/reads/{sample}_R1.fastq.gz")
+sample_ids, aligner_ids, markdup_ids, mincov_ids = glob_wildcards("results/04_Variants/haplotypecaller/{sample}_{aligner}_{markdup}_{mincov}X_variant-call.g.vcf")
 
 ###############################################################################
 # RESOURCES #
@@ -180,7 +181,7 @@ rule hard_filter_calls:
     params:
         filters={"myfilter": "QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0"},
         extra="",
-        java_opts="",
+        java_opts="-XX:ParallelGCThreads=8 -XX:ConcGCThreads=2 -XX:G1ConcRefinementThreads=9",
     resources:
         mem_gb= MEM_GB
     threads: 
@@ -217,7 +218,7 @@ rule bcftools_genotype_gvcfs_archive:
         "&> {log}"                          # Log redirection
 
 ###############################################################################
-rule genotype_gvcfs:
+rule genotype_single_gvcfs:
     # Aim: Perform joint genotyping on one or more samples pre-called with HaplotypeCaller.
     # In any case, the input samples must possess genotype likelihoods produced by HaplotypeCaller with `-ERC GVCF` or `-ERC BP_RESOLUTION`.
     # Use: gatk --java-options "-Xmx4g" GenotypeGVCFs \
@@ -225,7 +226,7 @@ rule genotype_gvcfs:
     #      -V input.g.vcf.gz \
     #      -O output.vcf.gz
     input:
-        gvcf="results/04_Variants/haplotypecaller/{sample}_{aligner}_{markdup}_{mincov}X_variant-call.g.vcf",  # combined gvcf over multiple samples
+        gvcf="results/04_Variants/haplotypecaller/{sample}_{aligner}_{markdup}_{mincov}X_variant-call.g.vcf",
         # N.B. gvcf or genomicsdb must be specified
         # in the latter case, this is a GenomicsDB data store
         ref="resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta"
@@ -235,7 +236,7 @@ rule genotype_gvcfs:
         "results/11_Reports/genotypegvcfs/{sample}_{aligner}_{markdup}_{mincov}X_genotypegvcfs.log"
     params:
         extra="",  # optional
-        java_opts="", # optional
+        java_opts="-XX:ParallelGCThreads=8 -XX:ConcGCThreads=2 -XX:G1ConcRefinementThreads=9", # optional
     resources:
         mem_mb=16000
     benchmark:
@@ -244,13 +245,73 @@ rule genotype_gvcfs:
         "v1.16.0/bio/gatk/genotypegvcfs"
 
 ###############################################################################
+rule genotype_multiple_gvcfs:
+    # Aim: Perform joint genotyping on one or more samples pre-called with HaplotypeCaller.
+    # In any case, the input samples must possess genotype likelihoods produced by HaplotypeCaller with `-ERC GVCF` or `-ERC BP_RESOLUTION`.
+    # Use: gatk --java-options "-Xmx4g" GenotypeGVCFs \
+    #      -R Homo_sapiens_assembly38.fasta \
+    #      -V input.g.vcf.gz \
+    #      -O output.vcf.gz
+    input:
+        gvcf= directory("results/04_Variants/genomics_db"), # combined gvcf over multiple samples "results/04_Variants/haplotypecaller/{sample}_{aligner}_{markdup}_{mincov}X_variant-call.g.vcf",
+        # N.B. gvcf or genomicsdb must be specified
+        # in the latter case, this is a GenomicsDB data store
+        ref="resources/genomes/GCA_018104305.1_AalbF3_genomic.fasta"
+    output:
+        vcf=temp("results/04_Variants/genotypegvcfs/{sample}_{aligner}_{markdup}_{mincov}X_genotyped.vcf")
+    log:
+        "results/11_Reports/genotypegvcfs/{sample}_{aligner}_{markdup}_{mincov}X_genotypegvcfs.log"
+    params:
+        extra="",  # optional
+        java_opts="-XX:ParallelGCThreads=8 -XX:ConcGCThreads=2 -XX:G1ConcRefinementThreads=9", # optional
+    resources:
+        mem_mb=16000
+    benchmark:
+        "benchmarks/genotypegvcfs/{sample}_{aligner}_{markdup}_{mincov}X_genotyped.tsv"
+    wrapper:
+        "v1.16.0/bio/gatk/genotypegvcfs"
+
+###############################################################################
+rule genomics_db_import:
+    # Aim: Import single-sample GVCFs into GenomicsDB before joint genotyping.
+    # The GATK4 Best Practice Workflow for SNP and Indel calling uses GenomicsDBImport to merge GVCFs from multiple samples. GenomicsDBImport 
+    #  offers the same functionality as CombineGVCFs and comes from the Intel-Broad Center for Genomics. The datastore transposes 
+    # sample-centric variant information across genomic loci to make data more accessible to tools.
+    # Use: gatk --java-options "-Xmx4g -Xms4g" \
+    #      GenomicsDBImport \
+    #      --genomicsdb-workspace-path my_database \
+    #      --batch-size 50 \
+    #      -L chr1:1000-10000 \
+    #      --sample-name-map cohort.sample_map \
+    #      --tmp-dir=/path/to/large/tmp \
+    #      --reader-threads 5
+    message:
+        "GATK's GenomicsDBImport for multiple g.vcfs"
+    input:
+        expand("results/04_Variants/haplotypecaller/{sample}_{aligner}_{markdup}_{mincov}X_variant-call.g.vcf",
+                sample=sample_ids, aligner=aligner_ids, markdup=markdup_ids, mincov=mincov_ids)        #["calls/a.g.vcf.gz", "calls/b.g.vcf.gz"], #"results/04_Variants/haplotypecaller/{sample}_{aligner}_{markdup}_{mincov}X_variant-call.g.vcf"
+    output:
+        db=directory("results/04_Variants/genomics_db"),
+    log:
+        "results/11_Reports/haplotypecaller/{sample}_{aligner}_{markdup}_{mincov}X_genomicsdbimport.log",
+    params:
+        intervals="ref",
+        db_action="create",  # optional
+        extra="",  # optional
+        java_opts="",  # optional
+    resources:
+        mem_mb=16000,
+    wrapper:
+        "v1.19.2/bio/gatk/genomicsdbimport"
+
+###############################################################################
 rule haplotype_caller_gvcf:
     # Aim: Call germline SNPs and indels via local re-assembly of haplotypes
     # Use: gatk --java-options "-Xmx4g" HaplotypeCaller  \
     #      -R Homo_sapiens_assembly38.fasta \
     #      -I input.bam \
     #      -O output.g.vcf.gz \
-    #      -ERC GVCF
+    #      -ERC GVCF or --emit-ref-confidence GVCF
     message:
         "GATK's HaplotypeCaller SNPs and indels calling for {wildcards.sample} sample ({wildcards.aligner})"
     input:
@@ -266,7 +327,7 @@ rule haplotype_caller_gvcf:
         "results/11_Reports/haplotypecaller/{sample}_{aligner}_{markdup}_{mincov}X_variant-call.log",
     params:
         extra="", 
-        java_opts="",  # optional
+        java_opts="-XX:ParallelGCThreads=8 -XX:ConcGCThreads=2 -XX:G1ConcRefinementThreads=9" ,  # -XX:ParallelGCThreads=NB_CPUS -XX:ConcGCThreads=NB_CPUS/4 -XX:G1ConcRefinementThreads=NB_CPUS+1
     threads: CPUS
     resources:
         mem_mb=16000,

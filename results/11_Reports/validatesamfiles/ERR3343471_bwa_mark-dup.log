@@ -1,9 +1,0 @@
-10:39:00.208 INFO  NativeLibraryLoader - Loading libgkl_compression.dylib from jar:file:/Users/loictalignani/miniconda3/envs/picard-2.27.4/share/picard-2.27.4-0/picard.jar!/com/intel/gkl/native/libgkl_compression.dylib
-
-
-## HISTOGRAM	java.lang.String
-Error Type	Count
-ERROR:MATE_CIGAR_STRING_INVALID_PRESENCE	314
-ERROR:MATE_NOT_FOUND	1256
-ERROR:MISSING_PLATFORM_VALUE	1
-
