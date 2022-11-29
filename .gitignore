@@ -22,4 +22,4 @@ resources/indexes/bwa/GCA_018104305.1_AalbF3_genomic.fna.ann
 resources/indexes/bwa/GCA_018104305.1_AalbF3_genomic.fna.bwt
 resources/indexes/bwa/GCA_018104305.1_AalbF3_genomic.fna.pac
 resources/indexes/bwa/GCA_018104305.1_AalbF3_genomic.fna.sa
-results/04_Variants/ERR3343471_bwa_10X_masked-ref.fasta
+results/
