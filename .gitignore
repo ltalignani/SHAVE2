@@ -5,4 +5,4 @@ Start_shave2_slurm_test.sh
 resources/genomes/
 resources/indexes/
 workflow/snk_test.smk
-
+raw/
