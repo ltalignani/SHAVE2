@@ -1,4 +1,4 @@
-# SHAVE2: SHort-read Alignment pipeline for VEctor v.2  - with HaplotypeCaller variant caller #
+# SHAVE2: SHort-read Alignment pipeline for VEctor v.2  - with HaplotypeCaller variant caller - SLURM version #
 
 ![Developper](<https://badgen.net/badge/Developper/Loïc Talignani/red?scale=0.9>)
 ![Maintener](<https://badgen.net/badge/Maintener/Loïc Talignani/blue?scale=0.9>)
@@ -53,54 +53,18 @@ Written for **MOVE-ADAPT** project.
 *V2.2023.07.13*  
 
 ### Directed Acyclic Graph ###
-<img src="./visuals/newdag.png" width="200" height="400">
+<img src="./visuals/dag.png" width="200" height="400">
 
 
 ## ~ INSTALLATIONS ~ ##
 
-# Conda _(required)_ #
-Install **Conda**: [Latest Miniconda Installer](https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links)
- 
-**Miniconda3 for MacOSX-64-bit**  
-_Follow the screen prompt instructions_  
-```shell
-curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -o ./Miniconda3-latest-MacOSX-x86_64.sh 
-bash ./Miniconda3-latest-MacOSX-x86_64.sh
-rm -f ./Miniconda3-latest-MacOSX-x86_64.sh
-```
-
-**Miniconda3 for MacOSX-arm64-bit**  
-_Follow the screen prompt instructions_  
-```shell
-curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh -o ./Miniconda3-latest-MacOSX-arm64.sh 
-bash ./Miniconda3-latest-MacOSX-arm64.sh
-rm -f ./Miniconda3-latest-MacOSX-arm64.sh
-```
-
-**Miniconda3 on Linux-64-bit**  
-_Follow the screen prompt instructions_  
-```shell
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash ./Miniconda3-latest-Linux-x86_64.sh
-rm -f ./Miniconda3-latest-Linux-x86_64.sh
-```
-
-- Please, **restart** now your shell, i.e. closing and opening a new terminal window
-
-- **Note on Apple Silicon processors:** as long as some programs will not be natively proposed for these ARM processors, it is imperative to create a conda environment exclusively for osx-64 for intel processor and let the excellent **Rosetta emulator** do the job (tested on a MacBook Pro M1 Pro):  
- 
-```shell
-CONDA_SUBDIR=osx-64 conda create -n myenv_x86
-conda activate myenv_x86
-conda config --env --set subdir osx-64
-```
 
 # SHAVE2 #
 Clone _(HTTPS)_ the [SHAVE2](https://github.com/ltalignani/SHAVE2) repository on github:
 
 ```shell
 git clone git@github.com:ltalignani/SHAVE2.git
-cd ./SHAVE2/
+
 ```
 
 Difference between **Download** and **Clone**:  
@@ -112,16 +76,15 @@ Difference between **Download** and **Clone**:
 ```shell
 git pull --verbose
 ```
+Then, upload the SHAVE2/ archive on your slurm cluster. 
 
 ## ~ USAGE ~ ##
 
-1. Copy your **paired-end** reads in **.fastq.gz** format files into: **./resources/reads/** directory
-2. Execute the **Start_shave2.sh** bash script to run the SHAVE2 pipeline
-    - with a **Double-click** on it _(if default app for .sh files is iTerm2 or Terminal.app on a Mac)_
-	- with a **Right-click** > **Open with** > **iTerm2 / Terminal.app** _(Mac)_
-	- with **CLI** from a terminal _(Mac / Linux)_
+1. Copy your **paired-end** reads in **.fastq.gz** format files into: **.raw/** directory
+2. Execute the **sbatch Start_shave2_slurm.sh** bash script to run the SHAVE2 pipeline
+
 ```shell
-bash Start_shave2.sh
+sbatch Start_shave2_slurm.sh
 ```
 Yours analyzes will start with default configuration settings  
 
@@ -134,69 +97,44 @@ _Option-2: Edit **fastq-screen.conf** file in **./config/** directory_
 Yours results are available in **./results/** directory, as follow:  
 _(file names keep track which tools / params was used: \<**sample**\>\_\<**aligner**\>\_\<**mincov**\>)_  
 
-### root ###
-This is the main results :   
-
-- **All_genome_coverages.tsv**: all genome coverages, in _tsv_ format
-- **All_readsQC_reports.html**: all reads quality reports from MultiQC, in _html_ format
-
 ### 00_Quality_Control ###
 | File | Object |
 |:--- | :--- |
 | **fastq-screen** | raw reads putative contaminations reports for each samples, in _html_, _png_ and _txt_ formats |
 | **fastqc** | raw reads quality reports for each samples, in _html_ and _zip_ formats |
 | **multiqc** | fastq-screen and fastqc results agregation report for all samples, in _html_ format |
+| **qualimap** | facilitate the quality control of alignment sequencing data and its derivatives like feature counts, in _html_ format |
+| **validatesamfile** | This tool reports on the validity of a SAM or BAM file relative to the SAM format specification, in _txt_ format |
 
 ### 01_Trimming ###
 | File | Object |
 |:--- | :--- |
-| **sickle/ directory** | paired reads, without adapters and quality trimmed, in _fastq.gz_ format
-| _cutadapt/ directory_ | paired reads, without adapters (default config: tempdir, removed, save disk usage)_ |
+| **trimmomatic/ directory** | paired reads, without adapters and quality trimmed, in _fastq.gz_ format
 
 ### 02_Mapping ###
-
 | File | Object |
 |:--- | :--- |
 | **mark-dup.bam** | read alignments, in _bam_ format _(can be visualized in, i.e. IGV)_ |
 | **mark-dup.bai** | bam indexes _bai_ use in i.e. IGV with _./resources/genomes/AalbF3.fasta_ |
-| **mark-dup.bam.sbi** | bam splitting index (needed by Spark for Picard MarkDuplicates |
 | **markdup_metrics.txt** | bam metrics created by Picard MarkDuplicates |
-| _mapped.sam_ | (default config: tempdir, removed, save disk usage)_ |
-| _sortbynames.bam_ | (default config: tempdir, removed, save disk usage)_ |
-| _fixmate.bam_ | (default config: tempdir, removed, save disk usage)_ |
-| _sorted.bam_ | (default config: tempdir, removed, save disk usage)_ |
-| _sorted_MD.bam_ | (default config: tempdir, removed, save disk usage)_ |
 
-### 03_Coverage ###
+### 04_Polishing ###
 | File | Object |
 |:--- | :--- |
-| **coverage-stats.tsv** | information about genome coverage, in _tsv_ format containing mean coverage depth across all genome reference sequence, standard deviation for mean-depth and genome reference coverage percentage at at-least n X of depth. |
+| **md_fixed.bam** | polished bam files , in _bam_ format |
+| **md_fixed.bam.bai** | polished bam indexes, in _bai_ format |
 
-### 04_Variants ###
+### 05_Variants ###
+
 | File | Object |
 |:--- | :--- |
-| **maskedref.fasta** | reference sequence, masked for low coverage regions, in _fasta_ format |
-| **maskedref.fasta.fai** | reference sequence indexes, masked for low coverages regions, in _fai_ format |
-| **indelqual.bam** | read alignments with indel qualities, in _bam_ format _(can be visualized in, i.e. IGV)_ |
-| **indelqual.bai** | bam indexes _bai_ use in i.e. IGV with _./results/04_Variants/maskedref.fasta_ |
-| **variant-filt.vcf.gz** | SNVs and Indels passing filters archive, in _vcf.gz_ format |
-| **variant-filt.vcf.gz.tbi** | SNVs and Indels passing filters archive indexed, in _vcf.bgz.tbi_ format |
-|  |  |
-| **haplotypecaller directory**: |  |
-| _variant-call.g.vcf_ | SNVs and Indels calling in _gvcf_ format (default config: tempdir, removed, save disk usage)_ |
-| _variant-call.g.vcf.idx_ | SNV and Indels calling in _idx_ format (default config: tempdir, removed, save disk usage)_
-|  |  |
-| **genomicdb** | g.vcfs merged by GenomicsDBImport for GenotypeGVCFs |
-| **genotypegvcfs directory**: |  |
-| _genotyped.vcf_ | SNVs genotyped in _vcf_ format |
-| _genotyped.vcf.idx_ | genotype index in _idx_ format (automatically generated by GenotypeGVCFs) |
-|  |  |
-| **variantfiltration directory**: |  |
-| _hardfiltered.vcf_ | genotyped SNVs hard-filtered, in _vcf_ format (default config: tempdir, removed, save disk usage)_ |
-| _hardfiltered.vcf.idx_ | index in _idx_ format (default config: tempdir, removed, save disk usage)_ |
-
-### 05_Validation ###
-- **mark-dup.txt**: statistics of all reads, produced by samtools stats, in _txt_ format
+| _variant-call.g.vcf_ | SNVs and Indels calling in _gvcf_ format | 
+| _variant-call.g.vcf.idx_ | SNV and Indels calling in _idx_ format |  
+| _genomicdb_ | g.vcfs merged by GenomicsDBImport for GenotypeGVCFs| 
+| _genotyped.vcf_ | SNVs genotyped in _vcf_ format |. 
+| _genotyped.vcf.idx_ | genotype index in _idx_ format (automatically generated by GenotypeGVCFs) |. 
+| _combinedGVCF.vcf.gz_ | alternative to GenomicsDBImport, is a merging of GVCFs that can eventually be input into GenoTypeGVCFs |
+| _GenotypeGVCFs.hf.vcf.gz_ | genotyped SNVs hard-filtered, in _vcf_ format (default config: tempdir, removed, save disk usage)_ |
 
 ### 10_graphs ###
 | File | Object |
@@ -215,54 +153,42 @@ _(columns: filename, modification time, rule version, status, plan)_
 
 If needed, see or edit default settings in **config.yaml** file in **./config/** directory  
 
-### Resources ###
-Edit to match your hardware configuration  
-- **cpus**: for tools that can _(i.e. bwa)_ use at most n cpus to run in parallel _(default config: '8')_  **Note**: snakemake (if launched with default bash script) will always use all cpus to parallelize jobs.
-- **mem_gb**: for tools that can _(i.e. samtools)_ limit its use of memory to max n Gb _(default config: '16' Gb)_. 
-- **tmpdir**: for tools that can specify where you want the temp stuff _(default config: '$TMPDIR')_
+### RESOURCES ###
+**samples** and **units** aren't necessary for the moment (update in progress)
 
-### Environments ###
-Edit if you want to change some environments _(i.e. new version)_ in ./workflow/envs/tools-version.yaml files
+### MODULES ###
+Modules that will be loaded for each tool. Change the path to correspond to your cluster. 
 
-### Aligner ###
-You can choose to align your reads using either **BWA** or **Bowtie2** or both tools  
-To select one or both, de/comment (#) as you wish:
+### REFERENCE ###
+- **ref_name**: reference name used for genome mapping _(default config: 'Anopheles-gambiae-PEST_CHROMOSOMES_AgamP4')_
+- **path**: path to genome reference
+- **reference**: reference sequence path used for genome mapping _(default config: 'AGAMP4')_
+- **index**: reference sequence index used for genome mapping _(default config: 'Anopheles-gambiae-PEST_CHROMOSOMES_AgamP4.fa.fai')_
+- **dictionary**: reference sequence dictionary used by GATK's tools _(default config: 'Anopheles-gambiae-PEST_CHROMOSOMES_AgamP4.dict')_
 
-- **bwa**: faster _(default config)_
-- **bowtie2**: slower, sensitivity required could be set _(see below "Bowtie2" options)_
+### PROCESSING ###
+- **tmpdir**: temporary directory _(default config: '$TMPDIR')_
 
-### Consensus ###
-- **reference**: reference sequence path used for genome mapping _(default config: 'AalbF3')_
-- **mincov**: minimum coverage for masking to low covered regions in final consensus sequence _(default config: '10')_
+### GATK ###
+- **genomicsdbimport**: genomicsdbimport flags _(default config: "")_
+- **genotypegvcfs**: genotypegvcfs flags _(default config: '-include-non-variant-sites')_
+- **haplotypecaller**: haplotypecaller flags _(default config: '-ERC GVCF --output-mode EMIT_ALL_CONFIDENT_SITES')_
 
-### Variant ###
-- **covmin**: minimum coverage allowed for SNVs and InDels filtering, if < 1 = off _(default config: '10' (INT))_
-- **afmin**: minimum allele frequency allowed for SNVs and InDels filtering, if < 0 = off _(default config: '0.1' (FLOAT))_
+### KNOWN VARIATION SITES ###
+- **alleles_target**: path to VCF containing known varition sites _(default config: "--alleles xxxx")_. Replace "xxxx" by path to the VCF containing known variation site.
 
-### BWA ###
-- **index**: reference index path for bwa _(default config: 'AalbF3')_
+### BWA###
+- **path**: path the BWA indexes _(default config: 'resources/indexes/bwa/')_
 
-### Bowtie2 ###
-- **index**: reference index path for bowtie2 _(default config: 'AalbF3')_
-- **sensitivity**: preset for bowtie2 sensitivity _(default config: '--sensitive')_
-
-### Sickle-trim ###
-- **command**: Pipeline wait for paired-end reads _(default config: 'pe')_
-- **encoding**: If your data are from recent Illumina run, let 'sanger' _(default config: 'sanger')_
-- **quality**: [Q-phred score](https://en.wikipedia.org/wiki/Phred_quality_score) limit _(default config: '30')_
-- **length**: read length limit, after trim _(default config: '25')_
-
-### Cutadapt ###
-- **length**: discard reads shorter than length, after trim _(default config: '25')_
-- **kits**: sequence of an adapter ligated to the 3' end of the first read _(default config: 'truseq', 'nextera' and 'small' Illumina kits)  
-
-### Fastq-Screen ###
+### FASTQ-SCREEN ###
 - **config**: path to the fastq-screen configuration file _(default config: ./config/fastq-screen.conf)_
 - **subset**: do not use the whole sequence file, but create a temporary dataset of this specified number of read _(default config: '1000')_
 - **aligner**: specify the aligner to use for the mapping. Valid arguments are 'bowtie', bowtie2' or 'bwa' _(default config: 'bwa')_
 
-#### fastq-screen.conf ####
-- **databases**: enables you to configure multiple genomes databases _(aligner index files)_ to search against
+### VARANTFILTRATION ###
+- **vqsr**: not coded at this time
+- **hard**: settings for VCFs hardfiltering _(default config:myfilter": "QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0)_
+
 
 ### Glossary ###
 - **BAM**: Binary Alignment Map
@@ -274,28 +200,37 @@ To select one or both, de/comment (#) as you wish:
 
 ### Directories tree structure ###
 ```shell
-🖥️️ Start_shave2.sh
+🖥️️ Start_shave2_slurm.sh
 📚 README.md
-🍜 snakemake.yaml
+📚 LICENSE
+📂 Cluster_logs/
 📂 visuals/
- └── 📈 newDAG.png
+ └── 📈 DAG.png
 📂 config/
  ├── ⚙️ config.yaml
  └── ⚙️ fastq-screen.conf
+📂 raw/
+ │    ├── 🛡️ .gitkeep
+ │    ├── 📦 ERR3343471_R1.fastq.gz
+ │    └── 📦 ERR3343471_R2.fastq.gz
 📂 resources/
  ├── 📂 genomes/
  │    └── 🧬 AalbF3.fasta
  ├── 📂 indexes/
- │    ├── 📂 bowtie2/
- │    │    └── 🗂️ AalbF3
- │    └── 📂 bwa/
- │         ├── 🗂️ AalbF3
- │         ├── 🗂️ Adapters
- │         
- └── 📂 reads/  
- │    ├── 🛡️ .gitkeep
- │    ├── 📦 ERR3343471_R1.fastq.gz
- │    └── 📦 ERR3343471_R2.fastq.gz
+ │    ├── 📂 bwa/
+ │    │    └── 🗂️ AGAMP4
+ ├── 📂 Adapters
+ │    ├── 🧬 nextera
+ │    ├── 🧬 truseq2-pe
+ │    ├── 🧬 truseq2-se
+ │    ├── 🧬 truseq3-pe
+ │    ├── 🧬 truseq3-pe2
+ │    └── 🧬 truseq3-se  
+ │
+ ├── 📂 results/
+ ├── 📂 slurm/
+ │    ├── ⚙️ config.yaml
+ │    └── 🖥️️ status-sacct.sh   
 📂 workflow/
  ├── 📂 envs/
  │    ├── 🍜 bcftools-1.14.yaml
@@ -313,8 +248,20 @@ To select one or both, de/comment (#) as you wish:
  │    ├── 🍜 picard-2.27.4.yaml
  │    ├── 🍜 samtools-1.14.yaml
  │    └── 🍜 sickle-trim-1.33.yaml
- └── 📂 rules/
-      └── 📜 shave2.smk
+ ├── 📂 report/
+ ├── 📂 rules/
+ │    ├── 📜 calling.smk
+ │    ├── 📜 common.smk
+ │    ├── 📜 filtering.smk
+ │    ├── 📜 mapping.smk
+ │    ├── 📜 polishing.smk
+ │    ├── 📜 stats.smk
+ │    └── 📜 vcf_stats.smk
+ ├── 📂 schemas/     
+ ├── 📂 scripts/
+ │    ├── 🍜 report_vcf.rmd
+ │    └── 🍜 report.rmd
+ └── 📜 snakefile.smk
 ```
 
 ## ~ SUPPORT ~ ##
@@ -328,6 +275,7 @@ To select one or both, de/comment (#) as you wish:
 
 ## ~ AUTHORS & ACKNOWLEDGMENTS ~ ##
 - Loïc TALIGNANI (Developer and Maintener)  
+- I would like to thanks **Sebastien Ravel**, CIRAD ingeneer, for his great help for the variant calling part.
 
 
 ## ~ CONTRIBUTING ~ ##
@@ -360,16 +308,6 @@ _F1000Research (2021)_
 **Source code**: [https://github.com/snakemake/snakemake](https://github.com/snakemake/snakemake)  
 **Documentation**: [https://snakemake.readthedocs.io/en/stable/index.html](https://snakemake.readthedocs.io/en/stable/index.html)  
 
-**Anaconda Software Distribution**  
-Team  
-_Computer software (2016)_  
-**DOI**: []()  
-**Publication**: [https://www.anaconda.com](https://www.anaconda.com)  
-**Source code**: [https://github.com/snakemake/snakemake](https://github.com/snakemake/snakemake) (conda)  
-**Documentation**: [https://snakemake.readthedocs.io/en/stable/index.html](https://snakemake.readthedocs.io/en/stable/index.html) (conda)  
-**Source code**: [https://github.com/mamba-org/mamba](https://github.com/mamba-org/mamba) (mamba) 
-**Documentation**: [https://mamba.readthedocs.io/en/latest/index.html](https://mamba.readthedocs.io/en/latest/index.html) (mamba)  
-
 **Tabix: fast retrieval of sequence features from generic TAB-delimited files**  
 Heng Li  
 _Bioinformatics, Volume 27, Issue 5 (2011)_  
@@ -392,15 +330,6 @@ _Broad Institute, GitHub repository (2019)_
 **Source code**:https://github.com/broadinstitute/picard](https://github.com/broadinstitute/picard)
 **Documentation**:[https://broadinstitute.github.io/picard/](https://broadinstitute.github.io/picard/)
 
-**LoFreq: a sequence-quality aware, ultra-sensitive variant caller for uncovering cell-population heterogeneity from high-throughput sequencing datasets**  
-Andreas Wilm, Pauline Poh Kim Aw, Denis Bertrand, Grace Hui Ting Yeo, Swee Hoe Ong, Chang Hua Wong, Chiea Chuen Khor, Rosemary Petric, Martin Lloyd Hibberd and Niranjan Nagarajan  
-_Nucleic Acids Research, Volume 40, Issue 22 (2012)_  
-**DOI**: [https://doi.org/10.1093/nar/gks918](https://doi.org/10.1093/nar/gks918)  
-**Publication**: [https://pubmed.ncbi.nlm.nih.gov/23066108/](https://pubmed.ncbi.nlm.nih.gov/23066108/)  
-**Source code**: [https://gitlab.com/treangenlab/lofreq](https://gitlab.com/treangenlab/lofreq) _(v2 used)_  
-**Source code**: [https://github.com/andreas-wilm/lofreq3](https://github.com/andreas-wilm/lofreq3) _(see also v3 in Nim)_  
-**Documentation**: [https://csb5.github.io/lofreq](https://csb5.github.io/lofreq)  
-
 **The AWK Programming Language**  
 Al Aho, Brian Kernighan and Peter Weinberger  
 _Addison-Wesley (1988)_  
@@ -408,14 +337,6 @@ _Addison-Wesley (1988)_
 **Publication**: []()  
 **Source code**: [https://github.com/onetrueawk/awk](https://github.com/onetrueawk/awk)  
 **Documentation**: [https://www.gnu.org/software/gawk/manual/gawk.html](https://www.gnu.org/software/gawk/manual/gawk.html)  
-
-**BEDTools: a flexible suite of utilities for comparing genomic features**  
-Aaron R. Quinlan and Ira M. Hall  
-_Bioinformatics, Volume 26, Issue 6 (2010)_  
-**DOI**: [https://doi.org/10.1093/bioinformatics/btq033](https://doi.org/10.1093/bioinformatics/btq033)  
-**Publication**: [https://academic.oup.com/bioinformatics/article/26/6/841/244688](https://academic.oup.com/bioinformatics/article/26/6/841/244688)  
-**Source code**: [https://github.com/arq5x/bedtools2](https://github.com/arq5x/bedtools2)  
-**Documentation**: [https://bedtools.readthedocs.io/en/latest/](https://bedtools.readthedocs.io/en/latest/)  
 
 **Twelve years of SAMtools and BCFtools**  
 Petr Danecek, James K Bonfield, Jennifer Liddle, John Marshall, Valeriu Ohan, Martin O Pollard, Andrew Whitwham, Thomas Keane, Shane A McCarthy, Robert M Davies and Heng Li  
@@ -433,21 +354,13 @@ _Bioinformatics, Volume 25, Aricle 1754-60 (2009)_
 **Source code**: [https://github.com/lh3/bwa](https://github.com/lh3/bwa)  
 **Documentation**: [http://bio-bwa.sourceforge.net](http://bio-bwa.sourceforge.net)  
 
-**Sickle: A sliding-window, adaptive, quality-based trimming tool for FastQ files**  
+**Trimmomatic: A sliding-window, adaptive, quality-based trimming tool for FastQ files**  
 Joshi NA and Fass JN  
 _(2011)  
-**DOI**: [https://doi.org/](https://doi.org/)  
-**Publication**: []()  
-**Source code**: [https://github.com/najoshi/sickle](https://github.com/najoshi/sickle)  
-**Documentation**: []()  
-
-**Cutadapt Removes Adapter Sequences From High-Throughput Sequencing Reads**  
-Marcel Martin  
-_EMBnet Journal, Volume 17, Article 1 (2011)  
-**DOI**: [https://doi.org/10.14806/ej.17.1.200](https://doi.org/10.14806/ej.17.1.200)  
-**Publication**: [http://journal.embnet.org/index.php/embnetjournal/article/view/200](http://journal.embnet.org/index.php/embnetjournal/article/view/200)  
-**Source code**: [https://github.com/marcelm/cutadapt](https://github.com/marcelm/cutadapt)  
-**Documentation**: [https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable)  
+**DOI**: [https://doi.org/10.1093/bioinformatics/btu170](https://doi.org/10.1093/bioinformatics/btu170)  
+**Publication**: [https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4103590/pdf/btu170.pdf](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4103590/pdf/btu170.pdf)  
+**Source code**: [https://github.com/usadellab/Trimmomatic](https://github.com/usadellab/Trimmomatic)  
+**Documentation**: [https://github.com/usadellab/Trimmomatic](https://github.com/usadellab/Trimmomatic)  
 
 **MultiQC: summarize analysis results for multiple tools and samples in a single report**  
 Philip Ewels, Måns Magnusson, Sverker Lundin and Max Käller  
