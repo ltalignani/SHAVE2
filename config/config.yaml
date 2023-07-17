@@ -1,4 +1,3 @@
-### RESOURCES ----------------------------------------------------------------------------------------
 ###############################################################################
 # Author: Loïc TALIGNANI
 # Affiliation: IRD_MIVEGEC / Université de Montpellier
@@ -8,11 +7,9 @@
 # Latest modification: 2022.11.24
 # Done:
 ###############################################################################
+### RESOURCES ----------------------------------------------------------------------------------------
 samples: config/samples.tsv
 units: config/units.tsv
-DATA:
-  directories:
-    reference_file: "/shared/projects/aedes_amplicon/shave2/resources/genomes/Anopheles-gambiae-PEST_CHROMOSOMES_AgamP4.fa"
 
 ### MODULES ------------------------------------------------------------------------------------------
 MODULES:
@@ -109,7 +106,7 @@ gatk:
 
 ### KNWON VARIATION SITES ----------------------------------------------------------------------------
 alleles:
-  alleles_target: "resources/alleles/populations.snps.sort.vcf.gz"
+  alleles_target: "--alleles xxxx"
 
 ### BWA ----------------------------------------------------------------------------------------------
 bwa:

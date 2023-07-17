@@ -92,6 +92,7 @@ rule HaplotypeCaller:
     params: 
         partition = 'long',
         other_options = config["gatk"]["haplotypecaller"], # -ERC GVCF
+        # alleles = config["alleles"][alleles_target] 
         interval = "{chromosomes}",
     benchmark:
         "benchmarks/haplotypecaller/{sample}_{chromosomes}_variant-call.tsv"

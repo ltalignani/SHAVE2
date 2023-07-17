@@ -102,6 +102,7 @@ rule samtools_flagstat:
         samtools flagstat {input.bam} > {output.flagstat} &> {log}
         """
 
+###############################################################################
 rule multiqc:
     message:
         "MultiQC"
