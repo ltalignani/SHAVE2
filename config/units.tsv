@@ -1,0 +1,4 @@
+sample_name	unit_name	fq1	fq2	sra	adapters	strandedness
+ERR3343470	lane1	raw/ERR3343470_R1.fastq.gz	raw/ERR3343470_R2.fastq.gz		
+ERR3343471	lane1	raw/ERR3343471_R1.fastq.gz	raw/ERR3343471_R2.fastq.gz		
+

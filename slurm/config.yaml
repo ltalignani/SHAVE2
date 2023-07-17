@@ -1,0 +1,35 @@
+jobs: 50
+cluster: "sbatch --parsable -p {params.partition} -t {resources.time_min} --mem={resources.mem_mb} -c {resources.cpus} -o Cluster_logs/{rule}_{wildcards}-%j.out -e Cluster_logs/{rule}_{wildcards}-%j.err --mail-type=FAIL --mail-user=loic.talignani@ird.fr"
+default-resources: [cpus=1, mem_mb=4000, time_min=6000]
+resources: [cpus=30, mem_mb=400000]
+restart-times: 3
+max-jobs-per-second: 10
+max-status-checks-per-second: 1
+local-cores: 8
+latency-wait: 600
+keep-going: true
+rerun-incomplete: true
+printshellcmds: true
+scheduler: greedy
+use-conda: true
+conda-frontend: conda
+cluster-status: status-sacct.sh
+#
+#
+# cluster: mkdir -p Cluster_logs/{rule} &&
+#   sbatch
+#   --account=aedes_amplicon
+#   --parsable
+#   --partition={resources.partition}
+#   --qos={resources.qos}
+#   --cpus-per-task={threads}
+#   --mem={resources.mem_mb}
+#   --job-name=smk-{rule}-{wildcards}
+#   --output=logs/{rule}/{rule}-{wildcards}-%j.out
+#   --error=logs/{rule}/{rule}-{wildcards}-%j.err
+#   --mail-type=FAIL
+#   --mail-user=loic.talignani@ird.fr
+# default-resources:
+#   - partition="long"
+#   - qos="normal"
+#   - mem_mb=10000

@@ -1,0 +1,206 @@
+$schema: "http://json-schema.org/draft-06/schema#"
+
+description: snakemake configuration file
+
+type: object
+
+properties:
+  samples:
+    type: string
+  units:
+    type: string
+  DATA:
+    type: object
+    properties:
+      directories:
+        type: object
+        properties:
+          reference_file:
+            type: string
+  MODULES:
+    type: object
+    properties:
+      BCFTOOLS:
+        type: string
+      BWA:
+        type: string
+      FASTQC:
+        type: string
+      FASTQSCREEN:
+        type: string
+      PICARDTOOLS:
+        type: string
+      GATK4:
+        type: string
+      GRAPHVIZ:
+        type: string
+      HTSLIB:
+        type: string
+      JAVA8:
+        type: string
+      MULTIQC:
+        type: string
+      PYTHON3:
+        type: string
+      QUALIMAP:
+        type: string
+      SAMTOOLS:
+        type: string
+      SNAKEMAKE:
+        type: string
+      TRIMMOMATIC:
+        type: string
+      VCFTOOLS:
+        type: string
+    required:
+      - FASTQC
+      - FASTQSCREEN
+      - PICARDTOOLS
+      - GATK4
+      - GRAPHVIZ
+      - MULTIQC
+      - QUALIMAP
+      - SAMTOOLS
+      - SNAKEMAKE
+      - TRIMMOMATIC
+      - VCFTOOLS
+
+  trimming:
+    type: object
+    properties:
+      activate:
+        type: boolean
+    required:
+      - activate
+
+  trimmomatic:
+    properties:
+      adapters:
+        type: object
+        properties:
+          nextera:
+            type: string
+          truseq2-pe:
+            type: string
+          truseq2-se:
+            type: string
+          truseq3-pe:
+            type: string
+          truseq23-pe-2:
+            type: string
+          truseq3-se:
+            type: string
+      seedMisMatches:
+        type: integer
+      palindromeClipTreshold:
+        type: integer
+      simpleClipThreshold:
+        type: integer
+      LeadMinTrimQual:
+        type: integer
+      TrailMinTrimQual:
+        type: integer
+      windowSize:
+        type: integer
+      avgMinQual:
+        type: integer
+      minReadLength:
+        type: integer
+      phred:
+        type: string
+    required:
+      - seedMisMatches
+      - palindromeClipTreshold
+      - simpleClipThreshold
+      - LeadMinTrimQual
+      - TrailMinTrimQual
+      - windowSize
+      - avgMinQual
+      - minReadLength
+      - phred
+
+  ref:
+    properties:
+      ref_name:
+        type: string
+      path:
+        type: string
+      reference:
+        type: string
+      index:
+        type: string
+      dictionary:
+        type: string
+    required:
+      - index_path
+      - ref_name
+      - path
+      - reference
+      - index
+
+  resources:
+    properties:
+      tmpdir:
+        type: string
+    required:
+      - tmprdir
+
+  aligner:
+    properties:
+      aligner: type:string
+    required:
+      - aligner
+
+  gatk:
+    properties:
+      genomicsdbimport:
+        type: string
+      genotypegvcfs:
+        type: string
+      haplotypecaller:
+        type: string
+    required:
+      - genomicsdbimport
+      - genotypegvcfs
+      - haplotypecaller
+
+  alleles:
+    properties:
+      alleles_target:
+        type: string
+    required:
+      - alleles_target
+
+  bwa:
+    properties:
+      path:
+        type: string
+    required:
+      - path
+
+  fastq-screen:
+    properties:
+      config:
+        type: string
+      subset:
+        type: string
+      aligner:
+        type: string
+    required:
+      - config
+      - subset
+      - aligner
+
+  filtering:
+    properties:
+      vqsr:
+        type: boolean
+      hard:
+        properties:
+          snvs:
+            type: string
+          indels:
+            type: string
+    required:
+      - vqsr
+      - hard
