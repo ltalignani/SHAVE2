@@ -79,13 +79,13 @@ echo ""
 echo -e "${blue}Unlocking working directory:${nc}"
 echo ""
 
-snakemake --profile slurm/ --slurm --default-resources slurm_account="aedes_amplicon" slurm_partition="long" --directory ${workdir}/ --snakefile workflow/snakefile.smk --unlock
+snakemake --profile slurm/ --slurm --default-resources slurm_account=aedes_amplicon slurm_partition=long --directory ${workdir}/ --snakefile workflow/snakefile.smk --unlock
 
 echo ""
 echo -e "${blue}Let's run!${nc}"
 echo ""
 
-snakemake --profile slurm/ --slurm --default-resources slurm_account="aedes_amplicon" slurm_partition="long" -directory ${workdir}/ --snakefile workflow/snakefile.smk --cores 30 --configfile config/config.yaml
+snakemake --profile slurm/ --slurm --default-resources slurm_account=aedes_amplicon slurm_partition=long --directory ${workdir}/ --snakefile workflow/snakefile.smk --cores 30 --configfile config/config.yaml
 
 ###### Create usefull graphs, summary and logs ######
 echo ""
@@ -102,12 +102,12 @@ extention_list="pdf png"
 for graph in ${graph_list} ; do
     for extention in ${extention_list} ; do
 	snakemake --profile slurm/ \
-               -slurm --default-resources slurm_account="aedes_amplicon" slurm_partition="long" runtime 15000 mem_mb 8000 tasks 8 \
+               --slurm --default-resources slurm_account=aedes_amplicon slurm_partition=long  \
                --snakefile workflow/snakefile.smk --${graph} | dot -T${extention} > ${workdir}/results/10_Graphs/${graph}.${extention} ;
-    done ;
+    done
 done
 
-snakemake -slurm --default-resources slurm_account="aedes_amplicon" slurm_partition="long" runtime 15000 mem_mb 8000 tasks 8 \
+snakemake --profile slurm/ --slurm --default-resources slurm_account=aedes_amplicon slurm_partition=long \
          --directory ${workdir} --profile slurm/ --snakefile workflow/snakefile.smk \
          --summary > ${workdir}/results/11_Reports/files_summary.txt
 

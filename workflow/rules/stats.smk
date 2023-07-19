@@ -41,7 +41,6 @@ rule samtools_stats:
         stats = "results/00_Quality_Control/{sample}_md_fixed_stats.txt",
     log:
         "results/11_Reports/samtools/{sample}_md_fixed_stats.log",
-    group:"stats"
     shell:
         config["MODULES"]["SAMTOOLS"]+"""
         samtools stats --threads {resources.cpus} -r {input.ref} {input.bam} 1> {output.stats} 2> {log}
@@ -59,7 +58,6 @@ rule validate_sam:
         check = "results/00_Quality_Control/validatesamfile/{sample}_md_fixed_ValidateSam.txt",
     log:
         "results/11_Reports/validatesamfiles/{sample}_md_fixed_validate_bam.log",
-    group:"stats"
     shell:
         config["MODULES"]["PICARDTOOLS"]+"""
         picard ValidateSamFile -I {input.bam} -O {output.check} -M SUMMARY > {log} 2>&1 || true
@@ -80,7 +78,6 @@ rule samtools_idxstats:
         idxstats = "results/00_Quality_Control/{sample}_md_fixed.idxstats.txt",
     log:
         "results/11_Reports/samtools/idxstats/{sample}_md_fixed_idxstats.log",
-    group:"stats"
     shell:
         config["MODULES"]["SAMTOOLS"]+"""
         samtools idxstats {input.bam} > {output} &> {log}
@@ -101,7 +98,6 @@ rule samtools_flagstat:
     log:
         "results/11_Reports/samtools/flagstat/{sample}_md_fixed_bam.log",
 
-    group:"stats"
     shell:
         config["MODULES"]["SAMTOOLS"]+"""
         samtools flagstat {input.bam} > {output.flagstat} &> {log}
@@ -125,7 +121,6 @@ rule multiqc:
 
     log:
         "results/11_Reports/multiqc/multiqc.log"
-    group:"stats"
     shell:
         config["MODULES"]["MULTIQC"]+"""
         multiqc {input} -o results/00_Quality_Control/MULTIQC/ -n {output} > {log} 2>&1 
@@ -158,7 +153,6 @@ rule qualimap:
     log:
         stderr="results/11_Reports/qualimap/logs/{sample}_qualimap.stderr",
         stdout="results/11_Reports/qualimap/logs/{sample}_qualimap.stdout",
-    group:"stats"
     shell:
         config["MODULES"]["QUALIMAP"]+"""
             unset DISPLAY && qualimap bamqc -bam {input.bam} -nt {threads} --java-mem-size=8G -outdir {params.outdir} 
