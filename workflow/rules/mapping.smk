@@ -12,12 +12,13 @@
 configfile: "config/config.yaml"
 cluster_config: "slurm/config.yaml"
 
-import os, sys
+import os, glob, sys, re
 from snakemake.utils import min_version
 min_version("6.12.0")
 
 ###############################################################################
 # WILDCARDS #
+# SAMPLES, READS, = glob_wildcards('raw/{sample}_R{read}.fastq')
 SAMPLE, = glob_wildcards("raw/{sample}_R1.fastq.gz")
 READS = ['1', '2']
 
@@ -91,15 +92,15 @@ rule trimmomatic:
         "results/11_Reports/trimmomatic/{sample}.log"
     params:
         partition = 'fast',
-        seedMisMatches =            str(config['trimmomatic']['seedMisMatches']),
-        palindromeClipTreshold =    str(config['trimmomatic']['palindromeClipTreshold']),
-        simpleClipThreshold =       str(config['trimmomatic']['simpleClipThreshold']),
-        LeadMinTrimQual =           str(config['trimmomatic']['LeadMinTrimQual']),
-        TrailMinTrimQual =          str(config['trimmomatic']['TrailMinTrimQual']),
-        windowSize =                str(config['trimmomatic']['windowSize']),
-        avgMinQual =                str(config['trimmomatic']['avgMinQual']),
-        minReadLen =                str(config['trimmomatic']['minReadLength']),
-        phred = 		            str(config["trimmomatic"]["phred"])
+        seedMisMatches =            "2",
+        palindromeClipTreshold =    "30",
+        simpleClipThreshold =      "15",
+        LeadMinTrimQual =           "3",
+        TrailMinTrimQual =          "3",
+        windowSize =                "4",
+        avgMinQual =                "15",
+        minReadLen =                "50",
+        phred = 		            "-phred33"
     resources: cpus=8, mem_mb=6000, time_min=300,
     params: partition = 'long',
     shell:

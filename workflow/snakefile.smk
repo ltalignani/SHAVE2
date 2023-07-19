@@ -25,6 +25,7 @@ import shutil
 
 ###############################################################################
 # WILDCARDS #
+# SAMPLE, READS, = glob_wildcards('raw/{sample}_R{read}.fastq')
 SAMPLE, = glob_wildcards("raw/{sample}_R1.fastq.gz"),
 CHROM = "2L 2R 3L 3R X".split()
 READS = ['1', '2']

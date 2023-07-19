@@ -11,9 +11,9 @@ keep-going: true
 rerun-incomplete: true
 printshellcmds: true
 scheduler: greedy
-use-conda: true
-conda-frontend: conda
 cluster-status: status-sacct.sh
+#use-conda: true
+#conda-frontend: conda
 #
 #
 # cluster: mkdir -p Cluster_logs/{rule} &&
