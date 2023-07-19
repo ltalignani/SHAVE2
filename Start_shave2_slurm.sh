@@ -85,7 +85,7 @@ echo ""
 echo -e "${blue}Let's run!${nc}"
 echo ""
 
-snakemake --profile slurm/ -slurm --default-resources slurm_account="aedes_amplicon" slurm_partition="long" --snakefile workflow/snakefile.smk --cores 30 --configfile config/config.yaml
+snakemake --profile slurm/ --slurm --default-resources slurm_account="aedes_amplicon" slurm_partition="long" -directory ${workdir}/ --snakefile workflow/snakefile.smk --cores 30 --configfile config/config.yaml
 
 ###### Create usefull graphs, summary and logs ######
 echo ""

@@ -41,6 +41,7 @@ rule samtools_stats:
         stats = "results/00_Quality_Control/{sample}_md_fixed_stats.txt",
     log:
         "results/11_Reports/samtools/{sample}_md_fixed_stats.log",
+    group:"stats"
     shell:
         config["MODULES"]["SAMTOOLS"]+"""
         samtools stats --threads {resources.cpus} -r {input.ref} {input.bam} 1> {output.stats} 2> {log}
@@ -58,6 +59,7 @@ rule validate_sam:
         check = "results/00_Quality_Control/validatesamfile/{sample}_md_fixed_ValidateSam.txt",
     log:
         "results/11_Reports/validatesamfiles/{sample}_md_fixed_validate_bam.log",
+    group:"stats"
     shell:
         config["MODULES"]["PICARDTOOLS"]+"""
         picard ValidateSamFile -I {input.bam} -O {output.check} -M SUMMARY > {log} 2>&1 || true
@@ -67,7 +69,10 @@ rule validate_sam:
 rule samtools_idxstats:
     message:
         "samtools idxstats: reports alignment summary statistics"
-    resources: cpus=1, mem_mb=4000, time_min=120 
+    resources: cpus=1, mem_mb=4000, time_min=120
+    params:
+        partition = 'fast',
+        extra="",  # optional params string
     input:
         bam = rules.fixmateinformation.output.fixed,
         idx = rules.index_fixed_bam.output.index,
@@ -75,9 +80,7 @@ rule samtools_idxstats:
         idxstats = "results/00_Quality_Control/{sample}_md_fixed.idxstats.txt",
     log:
         "results/11_Reports/samtools/idxstats/{sample}_md_fixed_idxstats.log",
-    params:
-        partition = 'fast',
-        extra="",  # optional params string
+    group:"stats"
     shell:
         config["MODULES"]["SAMTOOLS"]+"""
         samtools idxstats {input.bam} > {output} &> {log}
@@ -87,16 +90,18 @@ rule samtools_idxstats:
 rule samtools_flagstat:
     message:
         "samtools flagstats"
+    resources: cpus=1, mem_mb=4000, time_min=120
+    params:
+        partition = 'fast',
+        extra="",  # optional params string
     input:
         bam = rules.fixmateinformation.output.fixed,
     output:
         flagstat = "results/00_Quality_Control/{sample}_md_fixed_bam.flagstat.txt",
-    resources: cpus=1, mem_mb=4000, time_min=120
     log:
         "results/11_Reports/samtools/flagstat/{sample}_md_fixed_bam.log",
-    params:
-        partition = 'fast',
-        extra="",  # optional params string
+
+    group:"stats"
     shell:
         config["MODULES"]["SAMTOOLS"]+"""
         samtools flagstat {input.bam} > {output.flagstat} &> {log}
@@ -106,6 +111,8 @@ rule samtools_flagstat:
 rule multiqc:
     message:
         "MultiQC"
+    resources: cpus=4, mem_mb=8000, time_min=120
+    params: partition = 'fast',
     input:
         rules.samtools_flagstat.output.flagstat,
         rules.samtools_idxstats.output.idxstats,
@@ -115,10 +122,10 @@ rule multiqc:
         "results/00_Quality_Control/fastq-screen/",
     output:
         "multiqc_report.html"
-    resources: cpus=4, mem_mb=8000, time_min=120
-    params: partition = 'fast',
+
     log:
         "results/11_Reports/multiqc/multiqc.log"
+    group:"stats"
     shell:
         config["MODULES"]["MULTIQC"]+"""
         multiqc {input} -o results/00_Quality_Control/MULTIQC/ -n {output} > {log} 2>&1 
@@ -134,7 +141,11 @@ rule multiqc:
 ###############################################################################
 rule qualimap:
     message:
-        "Qualimap"               
+        "Qualimap"
+    resources: cpus=4, mem_mb=8000, time_min=120
+    params:
+        outdir = "results/00_Quality_Control/qualimap/{sample}/",
+        partition = 'fast',    
     input:
         bam = rules.fixmateinformation.output.fixed,
     output:
@@ -143,13 +154,11 @@ rule qualimap:
         protected("results/00_Quality_Control/qualimap/{sample}/raw_data_qualimapReport/mapped_reads_gc-content_distribution.txt"),
         protected("results/00_Quality_Control/qualimap/{sample}/genome_results.txt"),
         protected("results/00_Quality_Control/qualimap/{sample}/raw_data_qualimapReport/coverage_histogram.txt")
-    params:
-        outdir = "results/00_Quality_Control/qualimap/{sample}/",
-        partition = 'fast',
-    resources: cpus=4, mem_mb=8000, time_min=120
+
     log:
         stderr="results/11_Reports/qualimap/logs/{sample}_qualimap.stderr",
-        stdout="results/11_Reports/qualimap/logs/{sample}_qualimap.stdout" 
+        stdout="results/11_Reports/qualimap/logs/{sample}_qualimap.stdout",
+    group:"stats"
     shell:
         config["MODULES"]["QUALIMAP"]+"""
             unset DISPLAY && qualimap bamqc -bam {input.bam} -nt {threads} --java-mem-size=8G -outdir {params.outdir} 

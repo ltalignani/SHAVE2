@@ -31,10 +31,11 @@ TMPDIR = config["resources"]["tmpdir"] # Temporary directory
 CONFIG = config["fastq-screen"]["config"]           # Fastq-screen --conf
 MAPPER = config["fastq-screen"]["aligner"]          # Fastq-screen --aligner
 SUBSET = config["fastq-screen"]["subset"]           # Fastq-screen --subset
-REFPATH = config["ref"]["path"]                            # Path to genomes references
-REFERENCE = config["ref"]["reference"]              # Genome reference sequence, in fasta format
-INDEXPATH = config["bwa"]["path"]                    # Genome reference index path
-INDEX = config["ref"]["ref_name"]                          # Genome reference index files ['amb','ann','bwt','pac','sa']
+REFPATH = config["ref"]["path"]                     # Path to genomes references
+INDEXPATH = config["bwa"]["path"]                   # Genome reference index path
+reference_file =  config["ref"]["reference"]
+basename_reference = Path(reference_file).stem # Pathlib PurePath.stem: remove suffix
+INDEX = config["ref"]["ref_name"]                   # Genome reference index files ['amb','ann','bwt','pac','sa']
 
 ###############################################################################
 # FUNCTIONS AND COMMANDS #
@@ -125,7 +126,7 @@ rule bwa_mapping:
     resources: cpus=16, mem_mb=16000, time_min=600, slurm_extra="--mail-type=ALL --mail-user=loic.talignani@ird.fr"
     params: 
         partition = 'long',
-        ref = REFPATH+REFERENCE,
+        ref = reference_file,
         index = INDEXPATH+INDEX,
         extra = r"'@RG\tID:{sample}\tSM:{sample}\tCN:SC\tPL:ILLUMINA'", # Manage ReadGroup,
         other_options_samtools_view = "-bh",
