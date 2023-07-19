@@ -102,7 +102,8 @@ rule trimmomatic:
         minReadLen =                "50",
         phred = 		            "-phred33"
     resources: cpus=8, mem_mb=6000, time_min=300,
-    params: partition = 'long',
+    params: 
+        partition = 'long',
     shell:
         config["MODULES"]["TRIMMOMATIC"]+"""
             trimmomatic PE -threads {resources.cpus} {params.phred} {input.r1} {input.r2} \ 
@@ -121,8 +122,9 @@ rule trimmomatic:
 rule bwa_mapping:
     message:
         "BWA-MEM mapping sample reads against reference genome sequence"
-    resources: cpus=16, mem_mb=16000, time_min=600
-    params: partition = 'long',
+    resources: cpus=16, mem_mb=16000, time_min=600, slurm_extra="--mail-type=ALL --mail-user=loic.talignani@ird.fr"
+    params: 
+        partition = 'long',
         ref = REFPATH+REFERENCE,
         index = INDEXPATH+INDEX,
         extra = r"'@RG\tID:{sample}\tSM:{sample}\tCN:SC\tPL:ILLUMINA'", # Manage ReadGroup,
@@ -172,7 +174,8 @@ rule samtools_index_markdup:
     message:
         "SamTools indexing marked as duplicate BAM file"
     resources: cpus=2, mem_mb=4000, time_min=120
-    params: partition = 'fast',
+    params: 
+        partition = 'fast',
     input:
         markdup = rules.mark_duplicates.output.bam
     output:

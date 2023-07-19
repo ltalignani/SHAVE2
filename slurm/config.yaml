@@ -1,6 +1,6 @@
 jobs: 50
 cluster: "sbatch --parsable -p {params.partition} -t {resources.time_min} --mem={resources.mem_mb} -c {resources.cpus} -o Cluster_logs/{rule}_{wildcards}-%j.out -e Cluster_logs/{rule}_{wildcards}-%j.err --mail-type=FAIL --mail-user=loic.talignani@ird.fr"
-default-resources: [cpus=1, mem_mb=4000, time_min=6000]
+default-resources: [cpus=1, mem_mb=8000, time_min=15000]
 resources: [cpus=30, mem_mb=400000]
 restart-times: 3
 max-jobs-per-second: 10
