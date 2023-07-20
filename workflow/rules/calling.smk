@@ -44,7 +44,6 @@ BWAPATH = config["bwa"]["path"]                     # BWA path to indexes
 ###############################################################################
 rule create_sequence_dict:
     message: "create sequence dict for gatk_HaplotypeCaller reference"
-    threads: 1
     resources: 
         partition='fast',
         mem_mb=8000,
@@ -63,7 +62,6 @@ rule create_sequence_dict:
 ###############################################################################
 rule create_sequence_faidx:
     message: "create sequence fai for gatk_HaplotypeCaller reference"
-    threads: 1
     resources: 
         partition='fast',
         mem_mb=8000,
@@ -84,7 +82,6 @@ rule create_sequence_faidx:
 rule HaplotypeCaller:
     message:
         "GATK's HaplotypeCaller SNPs and indels calling for {wildcards.sample} sample"
-    threads: 1
     resources: 
         partition='long',
         mem_mb=20000,
@@ -108,9 +105,9 @@ rule HaplotypeCaller:
         "benchmarks/haplotypecaller/{sample}_{chromosomes}_variant-call.tsv"
     shell:
         config["MODULES"]["GATK4"]+"""
-            gatk HaplotypeCaller --java-options "{params.java_opts} -Xmx{resources.mem_mb}M" -nct {threads} -R {input.reference} -I {input.bam} -O {output.gvcf} \
+            gatk HaplotypeCaller --java-options "{params.java_opts} -Xmx{resources.mem_mb}M" -nct 1 -R {input.reference} -I {input.bam} -O {output.gvcf} \
             {params.other_options} \
-            --native-pair-hmm-threads {threads} \
+            --native-pair-hmm-threads 1 \
             -L {params.interval} \
             1>{log.output} 2>{log.error}
         """
@@ -124,7 +121,6 @@ def get_gvcf_list(list):
 rule GenomicsDBImport:
     message:
         "GATK's GenomicsDBImport for multiple g.vcfs for chromosome {wildcards.chromosomes}"
-    threads: 1
     resources: 
         partition='long',
         mem_mb=10000,
@@ -157,7 +153,6 @@ rule GenomicsDBImport:
 ##############################################################################
 rule GenotypeGVCFs_merge:
     message: "GATK's GenotypeGVCFs for chromosome {wildcards.chromosomes}"
-    threads: 1
     resources:
         partition='long',
         mem_mb=40000, 
@@ -186,9 +181,9 @@ rule GenotypeGVCFs_merge:
 ##############################################################################
 rule bcftools_concat:
     message: "Concatenate vcfs produced for each interval"
-    threads: 8
     resources: 
         partition='fast',
+        cpus_per_task=8,
         mem_mb=20000,
         runtime=12000, 
     input:
@@ -201,6 +196,6 @@ rule bcftools_concat:
         output = "results/11_Reports/bcftools_concat/bcftools_concat.{chromosomes}.o"
     shell:
         config["MODULES"]["BCFTOOLS"]+"""
-        bcftools concat --threads {threads} {input.vcf_file_all} -Oz -o {output.vcf_gz} 1>{log.output} 2>{log.error}
-        bcftools index --threads {threads} --tbi {output.vcf_file} 1>>{log.output} 2>>{log.error}
+        bcftools concat --threads {resources.cpus_per_task} {input.vcf_file_all} -Oz -o {output.vcf_gz} 1>{log.output} 2>{log.error}
+        bcftools index --threads {resources.cpus_per_task} --tbi {output.vcf_file} 1>>{log.output} 2>>{log.error}
         """

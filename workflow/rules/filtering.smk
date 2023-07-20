@@ -11,7 +11,6 @@
 rule gatk_filter:
     # Aim: Filter variant calls based on INFO and/or FORMAT annotations.
     message: "Hard-filtering of vcf files"
-    threads: 1
     resources: 
         partition='long',
         mem_mb=12000,

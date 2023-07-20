@@ -10,7 +10,6 @@
 ###############################################################################
 rule vcf_stats:
     message: "Execute rule VCF stats"
-    threads: 1
     resources: 
         partition='fast',
         mem_mb=4000, 
@@ -41,7 +40,6 @@ rule vcf_stats:
 ###############################################################################
 rule report_vcf:
     message: "Execute rule report_vcf",
-    threads: 1
     resources: 
         partition='fast',
         mem_mb=4000, 

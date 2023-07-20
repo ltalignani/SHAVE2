@@ -32,9 +32,9 @@ reference_file = config["ref"]["reference"]
 rule samtools_stats:
     message:
         "SamTools stats: Collects statistics from BAM files"
-    threads: 1
     resources: 
         partition='fast',
+        cpus_per_task=4,
         mem_mb=4000,
         runtime=120,
     input:
@@ -46,14 +46,13 @@ rule samtools_stats:
         "results/11_Reports/samtools/{sample}_md_fixed_stats.log",
     shell:
         config["MODULES"]["SAMTOOLS"]+"""
-        samtools stats --threads {threads} -r {input.ref} {input.bam} 1> {output.stats} 2> {log}
+        samtools stats --threads {resources.cpus_per_task} -r {input.ref} {input.bam} 1> {output.stats} 2> {log}
         """
 
 ###############################################################################
 rule validate_sam:
     message:
         "Picard ValidateSamFile: Basic check for bam file validity, as interpreted by the Broad Institute."
-    threads: 1
     resources: 
         partition='fast',
         mem_mb=4000, 
@@ -73,7 +72,6 @@ rule validate_sam:
 rule samtools_idxstats:
     message:
         "samtools idxstats: reports alignment summary statistics"
-    threads: 1
     resources: 
         partition='fast',
         mem_mb=4000, 
@@ -96,7 +94,6 @@ rule samtools_idxstats:
 rule samtools_flagstat:
     message:
         "samtools flagstats"
-    threads: 1
     resources: 
         partition='fast',
         mem_mb=4000, 
@@ -119,7 +116,6 @@ rule samtools_flagstat:
 rule multiqc:
     message:
         "MultiQC"
-    threads: 1
     resources: 
         partition='fast',
         mem_mb=8000, 
@@ -152,9 +148,9 @@ rule multiqc:
 rule qualimap:
     message:
         "Qualimap"
-    threads: 1
     resources: 
         partition='fast',
+        cpus_per_task=8,
         mem_mb=8000,
         runtime=1200,
     params:
@@ -173,7 +169,7 @@ rule qualimap:
         stdout="results/11_Reports/qualimap/logs/{sample}_qualimap.stdout",
     shell:
         config["MODULES"]["QUALIMAP"]+"""
-            unset DISPLAY && qualimap bamqc -bam {input.bam} -nt {threads} --java-mem-size=8G -outdir {params.outdir} 
+            unset DISPLAY && qualimap bamqc -bam {input.bam} -nt {resources.cpus_per_task} --java-mem-size=8G -outdir {params.outdir} 
             exitcode=$?
             if [ $exitcode -eq 1 ]
             then

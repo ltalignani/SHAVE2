@@ -43,14 +43,15 @@ trimmomatic:
     truseq3-pe: "resources/adapters/TruSeq3-PE.fa"
     truseq3-pe-2: "resources/adapters/TruSeq3-PE-2.fa"
     truseq3-se: "resources/adapters/TruSeq3-SE.fa"
-  seedMisMatches: 2
-  palindromeClipTreshold: 30
-  simpleClipThreshold: 15
-  LeadMinTrimQual: 3
-  TrailMinTrimQual: 3
-  windowSize: 4
-  avgMinQual: 15
-  minReadLength: 50
+  settings: "ILLUMINACLIP:resources/adapters/TruSeq2-PE.fa:2:30:15 LEADING:20 TRAILING:3 SLIDINGWINDOW:5:20 AVGQUAL:20 MINLEN:50"
+  # seedMisMatches: 2
+  # palindromeClipTreshold: 30
+  # simpleClipThreshold: 15
+  # LeadMinTrimQual: 20
+  # TrailMinTrimQual: 3
+  # windowSize: 5
+  # avgMinQual: 20
+  # minReadLength: 50
   phred: "-phred33"
 
 ### REFERENCE ----------------------------------------------------------------------------------------
