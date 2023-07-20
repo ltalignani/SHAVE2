@@ -24,13 +24,16 @@ reference_file = config["ref"]["reference"]
 rule SetNmMdAndUqTags:
     message:
         "Picard SetNmMdAndUqTags: this tool takes in a coordinate-sorted SAM or BAM and calculates the NM, MD, and UQ tags by comparing with the reference."
+    threads: 8
+    resources: 
+        partition='fast',
+        mem_mb=4000,
+        runtime=120,
     input:
         bam = rules.mark_duplicates.output.bam,
         ref = reference_file
     output:             
         fix = temp("results/04_Polishing/{sample}_sorted-mark-dup-fx.bam"),
-    resources: cpus=8, mem_mb=4000, time_min=120
-    params: partition = 'fast',
     log:
         "results/11_Reports/SetNmMdAndUqTags/{sample}_sorted-mark-dup-fx.log",
     benchmark:
@@ -44,12 +47,15 @@ rule SetNmMdAndUqTags:
 rule fixmateinformation:
     message:
         "Picard FixMateInformation: This tool ensures that all mate-pair information is in sync between each read and its mate pair."
+    threads: 8
+    resources: 
+        partition='fast',
+        mem_mb=4000,
+        runtime=1200,
     input:
         bam = rules.SetNmMdAndUqTags.output.fix
     output:
         fixed = "results/04_Polishing/{sample}_md_fixed.bam",
-    resources: cpus=8, mem_mb=4000, time_min=120
-    params: partition = 'fast',
     log:
         "results/11_Reports/fixmateinformation/{sample}_bwa_fixed.log",
     shell:
@@ -61,14 +67,17 @@ rule fixmateinformation:
 rule index_fixed_bam:
     message:
         "SamTools indexing indel qualities BAM file {wildcards.sample} sample",
+    threads: 4
+    resources: 
+        partition='fast',
+        mem_mb=4000,
+        runtime=1200,
     input:
         fixmate = rules.fixmateinformation.output.fixed
     output:
         index   = "results/04_Polishing/{sample}_md_fixed.bai",
     log:
         "results/11_Reports/samtools/{sample}_fixed-mate-index.log",
-    resources: cpus=4, mem_mb=4000, time_min=120 
-    params: partition = 'fast',
     shell:
         config["MODULES"]["SAMTOOLS"]+"""
             samtools index -@ {threads} -b {input.fixmate} {output.index} &> {log}

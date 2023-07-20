@@ -11,17 +11,21 @@
 rule gatk_filter:
     # Aim: Filter variant calls based on INFO and/or FORMAT annotations.
     message: "Hard-filtering of vcf files"
+    threads: 1
+    resources: 
+        partition='long',
+        mem_mb=12000,
+        runtime=600,
     input:
         ref=reference_file,
         vcf_file_all =rules.bcftools_concat.output.vcf_gz,
     output:
         vcf_file = "results/05_Variants/filtered/All_samples.{chromosomes}.GenotypeGVCFs.hf.vcf.gz",
     params: 
-        partition = 'long',
         filters={"QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0"},
         extra="",
         java_opts="",
-    resources: cpus=1, mem_mb=12000, tim_min=600
+
     log:
         "results/11_Reports/variantfiltration/{chromosomes}.merged_hardfiltered.log",
     shell:

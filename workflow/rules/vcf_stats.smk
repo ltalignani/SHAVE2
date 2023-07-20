@@ -10,6 +10,11 @@
 ###############################################################################
 rule vcf_stats:
     message: "Execute rule VCF stats"
+    threads: 1
+    resources: 
+        partition='fast',
+        mem_mb=4000, 
+        runtime=1200,
     input:
         vcf_file_all = rules.bcftools_concat.output.vcf_gz
     output:
@@ -19,8 +24,6 @@ rule vcf_stats:
         qual = 'results/06_SNP_calling_stats/All_samples.{chromosomes}.GenotypeGVCFs.lqual',
         missing_ind = 'results/06_SNP_calling_stats/All_samples.{chromosomes}.GenotypeGVCFs.imiss',
         miss = 'results/06_SNP_calling_stats/All_samples.{chromosomes}.GenotypeGVCFs.lmiss',
-    resources: cpus=1, mem_mb=4000, time_min=120
-    params: partition = 'long',
     log:
             error =  'results/11_Reports/vcf_stats/vcftools.{chromosomes}.e',
             output = 'results/11_Reports/vcf_stats/vcftools.{chromosomes}.o'        
@@ -38,7 +41,11 @@ rule vcf_stats:
 ###############################################################################
 rule report_vcf:
     message: "Execute rule report_vcf",
-    resources: cpus=1, mem_mb=4000, time_min=1200
+    threads: 1
+    resources: 
+        partition='fast',
+        mem_mb=4000, 
+        runtime=1200,
     input:
         freq = rules.vcf_stats.output.freq,
         depth = rules.vcf_stats.output.depth,
@@ -47,8 +54,7 @@ rule report_vcf:
         missing_ind = rules.vcf_stats.output.missing_ind,
         miss = rules.vcf_stats.output.miss
     params:
-        outdir = 'results/',
-        partition = 'long',
+        outdir = 'results/'
     output:
         report = "results/report_vcf.{chromosomes}.html",
     log:

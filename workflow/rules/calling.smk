@@ -44,8 +44,11 @@ BWAPATH = config["bwa"]["path"]                     # BWA path to indexes
 ###############################################################################
 rule create_sequence_dict:
     message: "create sequence dict for gatk_HaplotypeCaller reference"
-    resources: cpus=1, mem_mb=8000, time_min=120 
-    params: partition = 'fast',
+    threads: 1
+    resources: 
+        partition='fast',
+        mem_mb=8000,
+        runtime=120,
     input:
         reference = reference_file
     output:
@@ -60,12 +63,15 @@ rule create_sequence_dict:
 ###############################################################################
 rule create_sequence_faidx:
     message: "create sequence fai for gatk_HaplotypeCaller reference"
+    threads: 1
+    resources: 
+        partition='fast',
+        mem_mb=8000,
+        runtime=120,
     input:
         reference = reference_file
     output:
         fai = "resources/genomes/Anopheles-gambiae-PEST_CHROMOSOMES_AgamP4.fasta.fai"
-    resources: cpus=1, mem_mb=8000, time_min=120
-    params: partition = 'fast',
     log:
         error =  f'results/11_Reports/samtools/create_sequence_fai/{basename_reference}.e',
         output = f'results/11_Reports/samtools/create_sequence_fai/{basename_reference}.o'
@@ -78,6 +84,11 @@ rule create_sequence_faidx:
 rule HaplotypeCaller:
     message:
         "GATK's HaplotypeCaller SNPs and indels calling for {wildcards.sample} sample"
+    threads: 1
+    resources: 
+        partition='long',
+        mem_mb=20000,
+        runtime=24000,
     input:
         bam = rules.fixmateinformation.output.fixed,
         reference = reference_file,
@@ -85,12 +96,11 @@ rule HaplotypeCaller:
         fai = rules.create_sequence_faidx.output.fai,
     output:
         gvcf = "results/05_Variants/{sample}.{chromosomes}.g.vcf",
-    resources: cpus=1, mem_mb=20000, time_min=24000    
+   
     log:
         output = "results/11_Reports/haplotypecaller/{sample}.{chromosomes}_variant-call.o",
         error = "results/11_Reports/haplotypecaller/{sample}.{chromosomes}_variant-call.e",
     params: 
-        partition = 'long',
         other_options = config["gatk"]["haplotypecaller"], # -ERC GVCF
         # alleles = config["alleles"][alleles_target] 
         interval = "{chromosomes}",
@@ -100,8 +110,9 @@ rule HaplotypeCaller:
         config["MODULES"]["GATK4"]+"""
             gatk HaplotypeCaller --java-options "{params.java_opts} -Xmx{resources.mem_mb}M" -nct {threads} -R {input.reference} -I {input.bam} -O {output.gvcf} \
             {params.other_options} \
-            --native-pair-hmm-threads {resources.cpus} \
-            -L {params.interval} 1>{log.output} 2>{log.error}
+            --native-pair-hmm-threads {threads} \
+            -L {params.interval} \
+            1>{log.output} 2>{log.error}
         """
 
 ###############################################################################
@@ -113,6 +124,11 @@ def get_gvcf_list(list):
 rule GenomicsDBImport:
     message:
         "GATK's GenomicsDBImport for multiple g.vcfs for chromosome {wildcards.chromosomes}"
+    threads: 1
+    resources: 
+        partition='long',
+        mem_mb=10000,
+        runtime=24000,  
     input:
         gvcf_list   = expand(rules.HaplotypeCaller.output.gvcf, sample=SAMPLE, chromosomes=CHROM),
         reference   = reference_file,
@@ -121,10 +137,8 @@ rule GenomicsDBImport:
         combined    = "results/05_Variants/{chromosomes}_combinedGVCF.vcf.gz"
     log:
         output      = "results/11_Reports/genomicsdbimport/{chromosomes}_genomicsdbimport.o",
-        error       = "results/11_Reports/genomicsdbimport/{chromosomes}_genomicsdbimport.e",
-    resources: cpus=1, mem_mb=10000, time_min=24000   
+        error       = "results/11_Reports/genomicsdbimport/{chromosomes}_genomicsdbimport.e", 
     params:
-        partition = 'long',
         interval    = "{chromosomes}",
         str_join    = get_gvcf_list(expand(rules.HaplotypeCaller.output.gvcf, sample=SAMPLE, chromosomes=CHROM)),
         other_options = config["gatk"]["genomicsdbimport"]
@@ -133,7 +147,8 @@ rule GenomicsDBImport:
         gatk GenomicsDBImport --java-options "-Xmx{resources.mem_mb}M" -R {input.reference} {params.str_join} \
             --genomicsdb-workspace-path {output.db} \ 
             {params.other_options} \
-            -L {params.interval} 1>{log.output} 2>{log.error}
+            -L {params.interval} \
+            1>{log.output} 2>{log.error}
 
         gatk CombineGVCFs --java-options "-Xmx{resources.mem_mb}M" -R {input.reference} {params.str_join} \
         -L {params.interval} -O {output.combined} 1>>{log.output} 2>>{log.error}
@@ -142,6 +157,11 @@ rule GenomicsDBImport:
 ##############################################################################
 rule GenotypeGVCFs_merge:
     message: "GATK's GenotypeGVCFs for chromosome {wildcards.chromosomes}"
+    threads: 1
+    resources:
+        partition='long',
+        mem_mb=40000, 
+        runtime=24000,    
     input:
         genomicsdb          = rules.GenomicsDBImport.output.db,
         combined            = rules.GenomicsDBImport.output.combined,
@@ -149,9 +169,7 @@ rule GenotypeGVCFs_merge:
     output:
         vcf_file            = "results/05_Variants/genotypegvcfs/All_samples.{chromosomes}.GenotypeGVCFs.vcf",
         vcf_file_combined   = "results/05_Variants/genotypegvcfs/All_samples.{chromosomes}.GenotypeGVCFs_combined.vcf",
-    resources: cpus=1, mem_mb=40000, time_min=24000     
     params:
-        partition = 'long',
         interval            = "{chromosomes}",
         other_options       = config["gatk"]["genotypegvcfs"],
     log:
@@ -168,8 +186,11 @@ rule GenotypeGVCFs_merge:
 ##############################################################################
 rule bcftools_concat:
     message: "Concatenate vcfs produced for each interval"
-    resources: cpus=1, mem_mb=20000, time_min=12000
-    params: partition = 'fast',
+    threads: 8
+    resources: 
+        partition='fast',
+        mem_mb=20000,
+        runtime=12000, 
     input:
         vcf_file_all = rules.GenotypeGVCFs_merge.output.vcf_file,
     output:
@@ -180,6 +201,6 @@ rule bcftools_concat:
         output = "results/11_Reports/bcftools_concat/bcftools_concat.{chromosomes}.o"
     shell:
         config["MODULES"]["BCFTOOLS"]+"""
-        bcftools concat --threads {resources.cpus} {input.vcf_file_all} -Oz -o {output.vcf_gz} 1>{log.output} 2>{log.error}
-        bcftools index --threads {resources.cpus} --tbi {output.vcf_file} 1>>{log.output} 2>>{log.error}
+        bcftools concat --threads {threads} {input.vcf_file_all} -Oz -o {output.vcf_gz} 1>{log.output} 2>{log.error}
+        bcftools index --threads {threads} --tbi {output.vcf_file} 1>>{log.output} 2>>{log.error}
         """

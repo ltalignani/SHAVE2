@@ -12,7 +12,7 @@ rerun-incomplete: True
 printshellcmds: True
 scheduler: greedy
 cluster-status: status-sacct.sh
-#use-conda: true
+use-conda: False
 #conda-frontend: conda
 
 # cluster: mkdir -p Cluster_logs/{rule} &&

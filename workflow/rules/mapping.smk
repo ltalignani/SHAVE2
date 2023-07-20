@@ -4,13 +4,13 @@
 # Affiliation:          IRD_UMR224_MIVEGEC
 # Aim:                  Snakefile for SHort-read Alignment for VEctor pipeline
 # Date:                 2022.10.05
-# Run:                  snakemake --snakefile shave2.smk --cores X --use-conda
+# Run:                  snakemake --snakefile workflow/rules/mapping.smk --cores X 
 # Latest modification:  2023.07.13
 # Done:                 Updated rules
 ###############################################################################
 # CONFIGURATION FILES #
 configfile: "config/config.yaml"
-cluster_config: "slurm/config.yaml"
+#cluster_config: "slurm/config.yaml"
 
 import os, glob, sys, re
 from snakemake.utils import min_version
@@ -45,8 +45,11 @@ INDEX = config["ref"]["ref_name"]                   # Genome reference index fil
 ############################### R U L E S #####################################
 rule fastqc_quality_control:
     message: "FastQC reads quality controling"
-    resources: cpus=1, mem_mb=4000, tim_min=60
-    params: partition = 'fast',
+    threads: 1
+    resources: 
+        partition='fast',
+        mem_mb=4000,
+        runtime=60,
     input:
         os.path.join("raw/", '{sample}_R{read}.fastq.gz')
     output:
@@ -55,14 +58,17 @@ rule fastqc_quality_control:
         "results/11_Reports/quality/{sample}_R{read}_fastqc.log"
     shell:
         config["MODULES"]["FASTQC"]+"""
-            fastqc --quiet --threads {resources.cpus} --outdir {output.fastqc} {input} &> {log}
+            fastqc --quiet --threads {threads} --outdir {output.fastqc} {input} &> {log}
         """
 ###############################################################################
 rule fastqscreen_contamination_checking:
     message: "Fastq-Screen reads contamination checking"
-    resources: cpus=1, mem_mb=4000, tim_min=60
+    threads: 1
+    resources: 
+        partition='fast',
+        mem_mb=4000,
+        runtime=60,
     params:
-        partition = 'fast',
         config = CONFIG,
         mapper = MAPPER,
         subset = SUBSET
@@ -74,12 +80,17 @@ rule fastqscreen_contamination_checking:
         "results/11_Reports/quality/fastq-screen.log"
     shell:
         config["MODULES"]["FASTQSCREEN"]+"\n"+config["MODULES"]["BWA"]+"""
-            fastq_screen -q --threads {resources.cpus} --conf {params.config} --aligner {params.mapper} --subset {params.subset} --outdir {output.fastqscreen} {input.fastq}/*.fastq.gz &> {log}
+            fastq_screen -q --threads {threads} --conf {params.config} --aligner {params.mapper} --subset {params.subset} --outdir {output.fastqscreen} {input.fastq}/*.fastq.gz &> {log}
         """
 
 ###############################################################################
 rule trimmomatic:
     message: "Trimming reads for {wildcards.sample}"
+    threads: 8
+    resources:
+        partition='long',
+        mem_mb=6000,
+        runtime=300,
     input:
         r1="raw/{sample}_R1.fastq.gz",
         r2="raw/{sample}_R2.fastq.gz",
@@ -92,22 +103,18 @@ rule trimmomatic:
     log:
         "results/11_Reports/trimmomatic/{sample}.log"
     params:
-        partition = 'fast',
-        seedMisMatches =            "2",
-        palindromeClipTreshold =    "30",
-        simpleClipThreshold =      "15",
-        LeadMinTrimQual =           "3",
-        TrailMinTrimQual =          "3",
-        windowSize =                "4",
-        avgMinQual =                "15",
-        minReadLen =                "50",
-        phred = 		            "-phred33"
-    resources: cpus=8, mem_mb=6000, time_min=300,
-    params: 
-        partition = 'long',
+        seedMisMatches =            str(config['trimmomatic']['seedMisMatches']),
+        palindromeClipTreshold =    str(config['trimmomatic']['palindromeClipTreshold']),
+        simpleClipThreshold =      str(config['trimmomatic']['simpleClipThreshold']),
+        LeadMinTrimQual =           str(config['trimmomatic']['LeadMinTrimQual']),
+        TrailMinTrimQual =          str(config['trimmomatic']['TrailMinTrimQual']),
+        windowSize =                str(config['trimmomatic']['windowSize']),
+        avgMinQual =                str(config['trimmomatic']['avgMinQual']),
+        minReadLen =                str(config['trimmomatic']['minReadLength']),
+        phred = 		            str(config["trimmomatic"]["phred"])
     shell:
         config["MODULES"]["TRIMMOMATIC"]+"""
-            trimmomatic PE -threads {resources.cpus} {params.phred} {input.r1} {input.r2} \ 
+            trimmomatic PE -threads {threads} {params.phred} {input.r1} {input.r2} \ 
             {output.forward_reads} {output.forwardUnpaired} {output.reverse_reads} \
             {output.reverseUnpaired} \
             ILLUMINACLIP:{input.adapters}:{params.seedMisMatches}:{params.palindromeClipTreshold}:{params.simpleClipThreshold} \
@@ -123,9 +130,13 @@ rule trimmomatic:
 rule bwa_mapping:
     message:
         "BWA-MEM mapping sample reads against reference genome sequence"
-    resources: cpus=16, mem_mb=16000, time_min=600, slurm_extra="--mail-type=ALL --mail-user=loic.talignani@ird.fr"
+    threads: 16
+    resources: 
+        partition='long',
+        mem_mb=16000,
+        runtime=600,
+        slurm_extra="--mail-type=ALL --mail-user=loic.talignani@ird.fr"
     params: 
-        partition = 'long',
         ref = reference_file,
         index = INDEXPATH+INDEX,
         extra = r"'@RG\tID:{sample}\tSM:{sample}\tCN:SC\tPL:ILLUMINA'", # Manage ReadGroup,
@@ -143,15 +154,20 @@ rule bwa_mapping:
         error = "results/11_Reports/bwa/{sample}.e"
     shell:
         config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
-            (bwa mem -M -T 0 -t {resources.cpus} -v 1 -R {params.extra} {params.ref} {params.index} {input.fwdreads} {input.revreads} | 
-            samtools view -@ {resources.cpus} {params.other_options_samtools_view} | 
-            samtools sort -@ {resources.cpus} {params.other_options_samtools_sort} -o {output.bam} ) 1> {log.output} 2> {log.error}
+            (bwa mem -M -T 0 -t {threads} -v 1 -R {params.extra} {params.ref} {params.index} {input.fwdreads} {input.revreads} | 
+            samtools view -@ {threads} {params.other_options_samtools_view} | 
+            samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam} ) 1> {log.output} 2> {log.error}
         """
 
 ###############################################################################
 rule mark_duplicates:
     message:
         "Picard MarkDuplicates remove PCR duplicates"
+    threads: 16
+    resources: 
+        partition='long',
+        mem_mb=16000,
+        runtime=600,
     input:
         rules.bwa_mapping.output.bam,
     output:
@@ -162,9 +178,7 @@ rule mark_duplicates:
     log:
         "results/11_Reports/markduplicatesspark/{sample}_bwa_sorted-mark-dup.log",
     params:
-        partition = 'long',
         other_options = "-CREATE_INDEX TRUE -VALIDATION_STRINGENCY SILENT"
-    resources: cpus=16, mem_mb=16000, time_min=600
     shell:
         config["MODULES"]["PICARDTOOLS"]+"""
             picard MarkDuplicates {params.other_options} -I {input} -O {output.bam} -M {output.metrics} > {log} 2>&1
@@ -174,9 +188,11 @@ rule mark_duplicates:
 rule samtools_index_markdup:
     message:
         "SamTools indexing marked as duplicate BAM file"
-    resources: cpus=2, mem_mb=4000, time_min=120
-    params: 
-        partition = 'fast',
+    threads: 2
+    resources: 
+        partition='fast',
+        mem_mb=4000,
+        runtime=120,
     input:
         markdup = rules.mark_duplicates.output.bam
     output:
@@ -185,5 +201,5 @@ rule samtools_index_markdup:
         "results/11_Reports/samtools/{sample}_bwa_sorted-mark-dup-index.log",
     shell:
         config["MODULES"]["SAMTOOLS"]+"""
-            samtools index -@ {resources.cpus} -b {input.markdup} {output.index} &> {log}
+            samtools index -@ {threads} -b {input.markdup} {output.index} &> {log}
         """

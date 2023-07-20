@@ -79,13 +79,26 @@ echo ""
 echo -e "${blue}Unlocking working directory:${nc}"
 echo ""
 
-snakemake --profile slurm/ --slurm --default-resources slurm_account=aedes_amplicon slurm_partition=long --directory ${workdir}/ --snakefile workflow/snakefile.smk --unlock
+snakemake --slurm --default-resources runtime=24000 cpus_per_task=1 slurm_account=aedes_amplicon slurm_partition=long --directory ${workdir}/ --snakefile workflow/snakefile.smk --unlock
 
 echo ""
 echo -e "${blue}Let's run!${nc}"
 echo ""
 
-snakemake --profile slurm/ --slurm --default-resources slurm_account=aedes_amplicon slurm_partition=long --directory ${workdir}/ --snakefile workflow/snakefile.smk --cores 30 --configfile config/config.yaml
+snakemake --slurm --jobs 500 \
+          --directory ${workdir}/ \
+          --cores 30 \
+          --local-cores 8 \
+          --default-resources slurm_account=aedes_amplicon runtime=24000 cpus_per_task=1 slurm_partition=long \
+          --snakefile workflow/snakefile.smk \
+          --configfile config/config.yaml \
+          --rerun-incomplete \
+          --keep-going \
+          --scheduler greedy \
+          --printshellcmds \
+          --latency-wait 600 \
+          --max-jobs-per-second 10 \
+          --max-status-checks-per-second 5
 
 ###### Create usefull graphs, summary and logs ######
 echo ""
@@ -101,14 +114,13 @@ extention_list="pdf png"
 
 for graph in ${graph_list} ; do
     for extention in ${extention_list} ; do
-	snakemake --profile slurm/ \
-               --slurm --default-resources slurm_account=aedes_amplicon slurm_partition=long  \
+	snakemake --slurm --directory ${workdir}/ --default-resources slurm_account=aedes_amplicon slurm_partition=long  \
                --snakefile workflow/snakefile.smk --${graph} | dot -T${extention} > ${workdir}/results/10_Graphs/${graph}.${extention} ;
     done
 done
 
-snakemake --profile slurm/ --slurm --default-resources slurm_account=aedes_amplicon slurm_partition=long \
-         --directory ${workdir} --profile slurm/ --snakefile workflow/snakefile.smk \
+snakemake --slurm --default-resources slurm_account=aedes_amplicon slurm_partition=long \
+         --directory ${workdir} --snakefile workflow/snakefile.smk \
          --summary > ${workdir}/results/11_Reports/files_summary.txt
 
 ###### End managment ######

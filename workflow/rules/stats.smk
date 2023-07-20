@@ -32,8 +32,11 @@ reference_file = config["ref"]["reference"]
 rule samtools_stats:
     message:
         "SamTools stats: Collects statistics from BAM files"
-    resources: cpus=1, mem_mb=4000, time_min=120
-    params: partition = 'fast',
+    threads: 1
+    resources: 
+        partition='fast',
+        mem_mb=4000,
+        runtime=120,
     input:
         bam = rules.fixmateinformation.output.fixed,
         ref = reference_file,
@@ -43,15 +46,18 @@ rule samtools_stats:
         "results/11_Reports/samtools/{sample}_md_fixed_stats.log",
     shell:
         config["MODULES"]["SAMTOOLS"]+"""
-        samtools stats --threads {resources.cpus} -r {input.ref} {input.bam} 1> {output.stats} 2> {log}
+        samtools stats --threads {threads} -r {input.ref} {input.bam} 1> {output.stats} 2> {log}
         """
 
 ###############################################################################
 rule validate_sam:
     message:
         "Picard ValidateSamFile: Basic check for bam file validity, as interpreted by the Broad Institute."
-    resources: cpus=1, mem_mb=4000, time_min=120
-    params: partition = 'fast',
+    threads: 1
+    resources: 
+        partition='fast',
+        mem_mb=4000, 
+        runtime=600,
     input:
         bam = rules.fixmateinformation.output.fixed
     output:
@@ -67,9 +73,12 @@ rule validate_sam:
 rule samtools_idxstats:
     message:
         "samtools idxstats: reports alignment summary statistics"
-    resources: cpus=1, mem_mb=4000, time_min=120
+    threads: 1
+    resources: 
+        partition='fast',
+        mem_mb=4000, 
+        runtime=600,
     params:
-        partition = 'fast',
         extra="",  # optional params string
     input:
         bam = rules.fixmateinformation.output.fixed,
@@ -87,9 +96,12 @@ rule samtools_idxstats:
 rule samtools_flagstat:
     message:
         "samtools flagstats"
-    resources: cpus=1, mem_mb=4000, time_min=120
+    threads: 1
+    resources: 
+        partition='fast',
+        mem_mb=4000, 
+        runtime=600,
     params:
-        partition = 'fast',
         extra="",  # optional params string
     input:
         bam = rules.fixmateinformation.output.fixed,
@@ -107,8 +119,11 @@ rule samtools_flagstat:
 rule multiqc:
     message:
         "MultiQC"
-    resources: cpus=4, mem_mb=8000, time_min=120
-    params: partition = 'fast',
+    threads: 1
+    resources: 
+        partition='fast',
+        mem_mb=8000, 
+        runtime=1200,
     input:
         rules.samtools_flagstat.output.flagstat,
         rules.samtools_idxstats.output.idxstats,
@@ -137,10 +152,13 @@ rule multiqc:
 rule qualimap:
     message:
         "Qualimap"
-    resources: cpus=4, mem_mb=8000, time_min=120
+    threads: 1
+    resources: 
+        partition='fast',
+        mem_mb=8000,
+        runtime=1200,
     params:
-        outdir = "results/00_Quality_Control/qualimap/{sample}/",
-        partition = 'fast',    
+        outdir = "results/00_Quality_Control/qualimap/{sample}/"
     input:
         bam = rules.fixmateinformation.output.fixed,
     output:
