@@ -153,8 +153,6 @@ rule mark_duplicates:
     output:
         bam = "results/02_Mapping/{sample}_bwa_sorted-mark-dup.bam",
         metrics="results/02_Mapping/{sample}_bwa_sorted-mark-dup_metrics.txt",
-    benchmark:
-        "benchmarks/markduplicatesspark/{sample}_bwa.tsv"
     log:
         "results/11_Reports/markduplicatesspark/{sample}_bwa_sorted-mark-dup.log",
     params:

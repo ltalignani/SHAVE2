@@ -4,7 +4,7 @@
 # Affiliation:          IRD_UMR224_MIVEGEC
 # Aim:                  Snakefile for SHort-read Alignment for VEctor pipeline
 # Date:                 2022.10.05
-# Run:                  snakemake --snakefile workflow/rules/filtering.smk --cores X --use-conda
+# Run:                  snakemake --snakefile shave2.smk --cores X --use-conda
 # Latest modification:  2023.02.02
 # Done:                 Divided snakefile rules
 ###############################################################################
