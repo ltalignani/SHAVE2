@@ -115,7 +115,7 @@ rule bwa_mapping:
     resources: 
         partition='long',
         cpus_per_task=16,
-        mem_mb=16000,
+        mem_mb=32000,
         runtime=600,
         slurm_extra="--mail-type=ALL --mail-user=loic.talignani@ird.fr"
     params: 
