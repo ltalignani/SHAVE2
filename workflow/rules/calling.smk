@@ -35,9 +35,9 @@ TMPDIR = config["resources"]["tmpdir"] # Temporary directory,
 CONFIG = config["fastq-screen"]["config"]           # Fastq-screen --conf
 MAPPER = config["fastq-screen"]["aligner"]          # Fastq-screen --aligner
 SUBSET = config["fastq-screen"]["subset"]           # Fastq-screen --subset
-
 BWAPATH = config["bwa"]["path"]                     # BWA path to indexes
-
+reference_file =  config["ref"]["reference"]
+basename_reference = Path(reference_file).stem # Pathlib PurePath.stem: remove suffix
 ###############################################################################
 # FUNCTIONS #
 
@@ -69,13 +69,13 @@ rule create_sequence_faidx:
     input:
         reference = reference_file
     output:
-        fai = "resources/genomes/Anopheles-gambiae-PEST_CHROMOSOMES_AgamP4.fasta.fai"
+        fai = "resources/genomes/Anopheles-gambiae-PEST_CHROMOSOMES_AgamP4.fa.fai"
     log:
         error =  f'results/11_Reports/samtools/create_sequence_fai/{basename_reference}.e',
         output = f'results/11_Reports/samtools/create_sequence_fai/{basename_reference}.o'
 
     shell: config["MODULES"]["SAMTOOLS"]+"""
-        samtools faidx {input.reference} 1>{log.output} 2>{log.error}
+        samtools faidx {input.reference} 1> {log.output} 2> {log.error}
     """
 
 ###############################################################################

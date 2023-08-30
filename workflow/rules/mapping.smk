@@ -78,7 +78,7 @@ rule fastqscreen_contamination_checking:
         "results/11_Reports/quality/fastq-screen.log"
     shell:
         config["MODULES"]["FASTQSCREEN"]+"\n"+config["MODULES"]["BWA"]+"""
-            fastq_screen -q --threads {res ources.cpus_per_task} --conf {params.config} --aligner {params.mapper} --subset {params.subset} --outdir {output.fastqscreen} {input.fastq}/*.fastq.gz &> {log}
+            fastq_screen -q --threads {resources.cpus_per_task} --conf {params.config} --aligner {params.mapper} --subset {params.subset} --outdir {output.fastqscreen} {input.fastq}/*.fastq.gz &> {log}
         """
 
 ###############################################################################
@@ -94,10 +94,10 @@ rule trimmomatic:
         r2="raw/{sample}_R2.fastq.gz",
         adapters = config["trimmomatic"]["adapters"]["truseq2-pe"]
     output:
-        forward_reads   = "{sample}_trimmomatic_R1.fastq.gz",
-        reverse_reads   = "{sample}_trimmomatic_R2.fastq.gz",
-        forwardUnpaired = "{sample}_trimmomatic_unpaired_R1.fastq.gz",
-        reverseUnpaired = "{sample}_trimmomatic_unpaired_R2.fastq.gz"
+        forward_reads   = "results/01_Trimming/{sample}_trimmomatic_R1.fastq.gz",
+        reverse_reads   = "results/01_Trimming/{sample}_trimmomatic_R2.fastq.gz",
+        forwardUnpaired = "results/01_Trimming/{sample}_trimmomatic_unpaired_R1.fastq.gz",
+        reverseUnpaired = "results/01_Trimming/{sample}_trimmomatic_unpaired_R2.fastq.gz"
     log:
         "results/11_Reports/trimmomatic/{sample}.log"
     params:
@@ -119,26 +119,23 @@ rule bwa_mapping:
         runtime=600,
         slurm_extra="--mail-type=ALL --mail-user=loic.talignani@ird.fr"
     params: 
-        rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina", # Manage ReadGroup
+        #rg = f"@RG\\tID:{{sample}}\\tSM:{{sample}}\\tPL:Illumina", # Manage ReadGroup
         ref = reference_file,
-        index = INDEXPATH+INDEX,
         other_options_samtools_view = "-bh",
         other_options_samtools_sort = "",
-        # extra = r"'@RG\tID:{sample}\tSM:{sample}\tCN:SC\tPL:ILLUMINA'", 
+        extra = r"'@RG\tID:{sample}\tSM:{sample}\tCN:SC\tPL:ILLUMINA'", 
     input:
         fwdreads = rules.trimmomatic.output.forward_reads, 
         revreads = rules.trimmomatic.output.reverse_reads
     output:
         bam = "results/02_Mapping/{sample}_bwa_sorted.bam",
-    benchmark:
-        "benchmarks/bwa/{sample}.tsv"
     log:
         output = "results/11_Reports/bwa/{sample}.o",
         error = "results/11_Reports/bwa/{sample}.e"
     shell:
         config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
-            (bwa mem -M -T 0 -t {resources.cpus_per_task} -v 1 -R {params.rg} {params.ref} {params.index} {input.fwdreads} {input.revreads} | 
-            samtools view -@ {resources.cpus_per_task} {params.other_options_samtools_view} | 
+            (bwa mem -M -T 0 -t {resources.cpus_per_task} -v 1 -R {params.extra} {params.ref} {input.fwdreads} {input.revreads} |
+            samtools view -@ {resources.cpus_per_task} {params.other_options_samtools_view} |
             samtools sort -@ {resources.cpus_per_task} {params.other_options_samtools_sort} -o {output.bam} ) 1> {log.output} 2> {log.error}
         """
 
