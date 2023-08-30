@@ -116,7 +116,7 @@ rule bwa_mapping:
         partition='long',
         cpus_per_task=16,
         mem_mb=32000,
-        runtime=600,
+        runtime=1200,
         slurm_extra="--mail-type=ALL --mail-user=loic.talignani@ird.fr"
     params: 
         #rg = f"@RG\\tID:{{sample}}\\tSM:{{sample}}\\tPL:Illumina", # Manage ReadGroup
