@@ -88,6 +88,7 @@ rule HaplotypeCaller:
         runtime=24000,
     input:
         bam = rules.fixmateinformation.output.fixed,
+        index = rules.index_fixed_bam.output.index,
         reference = reference_file,
         dictionary = rules.create_sequence_dict.output.dictionary,
         fai = rules.create_sequence_faidx.output.fai,
@@ -99,15 +100,14 @@ rule HaplotypeCaller:
         error = "results/11_Reports/haplotypecaller/{sample}.{chromosomes}_variant-call.e",
     params: 
         other_options = config["gatk"]["haplotypecaller"], # -ERC GVCF
+        output_mode = config["gatk"]["output_mode"],
         # alleles = config["alleles"][alleles_target] 
         interval = "{chromosomes}",
     benchmark:
         "benchmarks/haplotypecaller/{sample}_{chromosomes}_variant-call.tsv"
     shell:
         config["MODULES"]["GATK4"]+"""
-            gatk HaplotypeCaller --java-options "{params.java_opts} -Xmx{resources.mem_mb}M" -nct 1 -R {input.reference} -I {input.bam} -O {output.gvcf} \
-            {params.other_options} \
-            --native-pair-hmm-threads 1 \
+            gatk HaplotypeCaller --java-options "-Xmx{resources.mem_mb}M" {params.other_options} --output-mode {params.output_mode} -R {input.reference} -I {input.bam} -O {output.gvcf} \
             -L {params.interval} \
             1>{log.output} 2>{log.error}
         """

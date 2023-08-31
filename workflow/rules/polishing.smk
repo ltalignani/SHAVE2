@@ -30,6 +30,7 @@ rule SetNmMdAndUqTags:
         runtime=120,
     input:
         bam = rules.mark_duplicates.output.bam,
+        index = rules.samtools_index_markdup.output.index,
         ref = reference_file
     output:             
         fix = temp("results/04_Polishing/{sample}_sorted-mark-dup-fx.bam"),

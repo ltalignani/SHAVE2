@@ -95,12 +95,13 @@ resources:
 gatk:
   genomicsdbimport: ""
   genotypegvcfs: "-include-non-variant-sites"
-  haplotypecaller: "-ERC GVCF --output-mode EMIT_ALL_CONFIDENT_SITES"
-## Available options:  "-ERC GVCF"                              Emit Ref Confidence scores with condensed non-variants blocks, ie the GVCF format
-##                     "-ERC BP_RESOLUTION"                     Emit Ref Confidence scores site by site
-##                     "--output-mode EMIT_VARIANTS_ONLY"       Produces calls only at variant sites
-##                     "--output-mode EMIT_ALL_ACTIVE_SITES"    Produces calls at any region over the activity threshold regardless of confidence. This will give a measure of reference confidence and a measure of which alt alleles are more plausible. Inflate VCF size considerably
-##                     "--output-mode EMIT_ALL_CONFIDENT_SITES" Produces calls at variant sites and confident reference sites
+  haplotypecaller: "-ERC GVCF"
+  ## Available options:  "-ERC GVCF"                              Emit Ref Confidence scores with condensed non-variants blocks, ie the GVCF format
+  ##                     "-ERC BP_RESOLUTION"                     Emit Ref Confidence scores site by site
+  output_mode: "EMIT_ALL_CONFIDENT_SITES"
+##                     "EMIT_VARIANTS_ONLY"       Produces calls only at variant sites
+##                     "EMIT_ALL_ACTIVE_SITES"    Produces calls at any region over the activity threshold regardless of confidence. This will give a measure of reference confidence and a measure of which alt alleles are more plausible. Inflate VCF size considerably
+##                     "EMIT_ALL_CONFIDENT_SITES" Produces calls at variant sites and confident reference sites
 
 ### KNWON VARIATION SITES ----------------------------------------------------------------------------
 knwon_variation: False
